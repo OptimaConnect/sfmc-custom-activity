@@ -384,10 +384,10 @@ define([
             $("#instore_code_"+instoreCodeIndex+"_valid_to").val($("option:selected", this).attr("data-attribute-validto"));
 
             // set promo id
-            $("#instore_code_"+instoreCodeIndex+"_promo_id").val(this.value);
+            $("#instore_code_"+instoreCodeIndex+"_promo_id").val($("option:selected", this).attr("data-attribute-discountid"));
 
             // set promo id
-            $("#instore_code_"+instoreCodeIndex+"_promo_group_id").val(this.value);
+            $("#instore_code_"+instoreCodeIndex+"_promo_group_id").val($("option:selected", this).attr("data-attribute-discountid"));
 
             // set loyalty promotion
             $("#instore_code_"+instoreCodeIndex+"_loyalty_promotion").val(instoreCodeLoyaltyPromotion);
@@ -824,11 +824,11 @@ define([
                         console.log(result.items[i].keys);
                     }
                     // do something with `substr[i]
-                    $("#instore_code_1").append("<option data-attribute-loyalty=" + result.items[i].values.bispromotionheader + " data-attribute-validfrom=" + result.items[i].values.datefrom + " data-attribute-validto=" + result.items[i].values.dateto + " value=" + encodeURI(result.items[i].values.discountmediaid) + ">" + result.items[i].keys.discountid + " - " + result.items[i].values.name + "</option>");
-                    $("#instore_code_2").append("<option data-attribute-loyalty=" + result.items[i].values.bispromotionheader + " data-attribute-validfrom=" + result.items[i].values.datefrom + " data-attribute-validto=" + result.items[i].values.dateto + " value=" + encodeURI(result.items[i].values.discountmediaid) + ">" + result.items[i].keys.discountid + " - " + result.items[i].values.name + "</option>");
-                    $("#instore_code_3").append("<option data-attribute-loyalty=" + result.items[i].values.bispromotionheader + " data-attribute-validfrom=" + result.items[i].values.datefrom + " data-attribute-validto=" + result.items[i].values.dateto + " value=" + encodeURI(result.items[i].values.discountmediaid) + ">" + result.items[i].keys.discountid + " - " + result.items[i].values.name + "</option>");
-                    $("#instore_code_4").append("<option data-attribute-loyalty=" + result.items[i].values.bispromotionheader + " data-attribute-validfrom=" + result.items[i].values.datefrom + " data-attribute-validto=" + result.items[i].values.dateto + " value=" + encodeURI(result.items[i].values.discountmediaid) + ">" + result.items[i].keys.discountid + " - " + result.items[i].values.name + "</option>");
-                    $("#instore_code_5").append("<option data-attribute-loyalty=" + result.items[i].values.bispromotionheader + " data-attribute-validfrom=" + result.items[i].values.datefrom + " data-attribute-validto=" + result.items[i].values.dateto + " value=" + encodeURI(result.items[i].values.discountmediaid) + ">" + result.items[i].keys.discountid + " - " + result.items[i].values.name + "</option>");
+                    $("#instore_code_1").append(`<option data-attribute-loyalty=${result.items[i].values.bispromotionheader} data-attribute-validfrom=${result.items[i].values.datefrom} data-attribute-validto=${result.items[i].values.dateto} data-attribute-discountid=${result.items[i].keys.discountid} value=${encodeURI(result.items[i].values.discountmediaid)}>${result.items[i].keys.discountid} - ${result.items[i].values.name}</option>`);
+                    $("#instore_code_2").append(`<option data-attribute-loyalty=${result.items[i].values.bispromotionheader} data-attribute-validfrom=${result.items[i].values.datefrom} data-attribute-validto=${result.items[i].values.dateto} data-attribute-discountid=${result.items[i].keys.discountid} value=${encodeURI(result.items[i].values.discountmediaid)}>${result.items[i].keys.discountid} - ${result.items[i].values.name}</option>`);
+                    $("#instore_code_3").append(`<option data-attribute-loyalty=${result.items[i].values.bispromotionheader} data-attribute-validfrom=${result.items[i].values.datefrom} data-attribute-validto=${result.items[i].values.dateto} data-attribute-discountid=${result.items[i].keys.discountid} value=${encodeURI(result.items[i].values.discountmediaid)}>${result.items[i].keys.discountid} - ${result.items[i].values.name}</option>`);
+                    $("#instore_code_4").append(`<option data-attribute-loyalty=${result.items[i].values.bispromotionheader} data-attribute-validfrom=${result.items[i].values.datefrom} data-attribute-validto=${result.items[i].values.dateto} data-attribute-discountid=${result.items[i].keys.discountid} value=${encodeURI(result.items[i].values.discountmediaid)}>${result.items[i].keys.discountid} - ${result.items[i].values.name}</option>`);
+                    $("#instore_code_5").append(`<option data-attribute-loyalty=${result.items[i].values.bispromotionheader} data-attribute-validfrom=${result.items[i].values.datefrom} data-attribute-validto=${result.items[i].values.dateto} data-attribute-discountid=${result.items[i].keys.discountid} value=${encodeURI(result.items[i].values.discountmediaid)}>${result.items[i].keys.discountid} - ${result.items[i].values.name}</option>`);
                 }
                 updateApiStatus("instorecodes-api", true);
             }
