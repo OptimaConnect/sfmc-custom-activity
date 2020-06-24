@@ -1,7 +1,7 @@
 'use strict';
 var util = require('util');
 
-console.dir("Activity js file loaded");
+console.log("Activity JS loaded");
 
 // Deps
 const path      = require('path');
@@ -64,6 +64,7 @@ exports.edit = function (req, res) {
     //console.log( req.body );
     logData(req);
     res.send(200, 'Edit');
+    console.log("Editing the widget");
 };
 
 /*

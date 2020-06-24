@@ -23,6 +23,7 @@ define([
     var stepValidation = false;
     var payloadToSave;
     var summaryPayload;
+    var fuel2Token;
 
     if ( debug ) {
         console.log("Current Step is: " + currentStep);
@@ -34,34 +35,59 @@ define([
 
     $(window).ready(onRender);
 
-    connection.on('initActivity', initialize);
-    connection.on('requestedTokens', onGetTokens);
-    connection.on('requestedEndpoints', onGetEndpoints);
+    
+    //connection.on('requestedTokens', onGetTokens);
+    connection.on('requestedTokens', async function(tokens) {
+        console.log("Current Fuel 2 Token object is: ");
+        console.log(tokens);
+        console.log("The actual token is: ");
+        console.log(tokens.fuel2token);
+        fuel2Token = tokens.fuel2token; 
+    });
 
+    connection.on('initActivity', initialize);
+    connection.on('requestedEndpoints', onGetEndpoints);
     connection.on('clickedNext', onClickedNext);
     connection.on('clickedBack', onClickedBack);
-    connection.on('gotoStep', onGotoStep);
+    connection.on('gotoStep', onGotoStep);  
 
     function onRender() {
         var debug = true;
         // JB will respond the first time 'ready' is called with 'initActivity'
         connection.trigger('ready');
-
         connection.trigger('requestTokens');
         connection.trigger('requestEndpoints');
-
-        lookupPromos();
-        lookupGlobalCodes();
-        lookupTemplates();
-        lookupVoucherPots();
-        lookupControlGroups();
-        lookupUpdateContacts();
-        loadEvents();
-        setGlobalCodeBlock();
     }
 
     function initialize (data) {
-        
+
+        console.log("Do we have a fuel token?");
+        console.log(fuel2Token);
+
+        console.log("The Data sent to init is");
+        console.log(data);
+
+
+        // attempt to get another token
+        connection.on('requestedTokens', async function(tokens) {
+            console.log("Current Fuel 2 Token object is: ");
+            console.log(tokens);
+            console.log("The actual token is: ");
+            console.log(tokens.fuel2token);
+            fuel2Token = tokens.fuel2token;
+
+            if ( fuel2Token ) {
+                lookupPromos(fuel2Token);
+                lookupGlobalCodes(fuel2Token);
+                lookupTemplates(fuel2Token);
+                lookupVoucherPots(fuel2Token);
+                lookupControlGroups(fuel2Token);
+                lookupUpdateContacts(fuel2Token);
+                loadEvents();
+                setGlobalCodeBlock();
+            } 
+        });
+ 
         if (data) {
             payload = data;
             var argumentsSummaryPayload = payload.arguments.execute.inArguments[0];
@@ -379,10 +405,10 @@ define([
             $("#instore_code_"+instoreCodeIndex+"_valid_to").val($("option:selected", this).attr("data-attribute-validto"));
 
             // set promo id
-            $("#instore_code_"+instoreCodeIndex+"_promo_id").val(this.value);
+            $("#instore_code_"+instoreCodeIndex+"_promo_id").val($("option:selected", this).attr("data-attribute-discountid"));
 
             // set promo id
-            $("#instore_code_"+instoreCodeIndex+"_promo_group_id").val(this.value);
+            $("#instore_code_"+instoreCodeIndex+"_promo_group_id").val($("option:selected", this).attr("data-attribute-discountid"));
 
             // set loyalty promotion
             $("#instore_code_"+instoreCodeIndex+"_loyalty_promotion").val(instoreCodeLoyaltyPromotion);
@@ -403,19 +429,19 @@ define([
 
         // handler for Optima button
         $("#control_action_optima").click(function(){
-            setLive($("#promotion_key_hidden").val());
+            setLive($("#promotion_key_hidden").val(), fuel2Token);
             $("#sent").val(true);
         });
 
         // handler for Optima button
         $("#control_action_update").click(function(){
-            updateExistingPromotion($("#promotion_key_hidden").val(), buildActivityPayload());
+            updateExistingPromotion($("#promotion_key_hidden").val(), buildActivityPayload(), fuel2Token);
             $("#sent").val(false);
         });
 
         // handler for Optima button
         $("#control_action_test").click(function(){
-            saveToDataExtension(buildActivityPayload(), false);
+            saveToDataExtension(buildActivityPayload(), fuel2Token);
             $("#sent").val(false);
         });
 
@@ -762,11 +788,11 @@ define([
         $("#show_global_codes").show();
     }
 
-    function lookupGlobalCodes() {
+    function lookupGlobalCodes(fuel2Token) {
 
         // access offer types and build select input
         $.ajax({
-            url: "/dataextension/lookup/globalcodes", 
+            url: "/dataextension/lookup/globalcodes/" + fuel2Token, 
             error: function() {
                 updateApiStatus("onlinecodes-api", false);
             },
@@ -778,34 +804,31 @@ define([
                 }
 
                 var i;
-                if ( result.items ) {
-                    if ( result.items.length > 0 ) {
-                        for (i = 0; i < result.items.length; ++i) {
-                            if ( debug ) {
-                                console.log(result.items[i].keys.couponcode);
-                            }
-                            // do something with `substr[i]
-                            $("#global_code_1").append("<option data-attribute-validfrom='" + result.items[i].values.validfrom + "' data-attribute-validto='" + result.items[i].values.validto + "' value=" + encodeURI(result.items[i].keys.couponcode) + ">" + result.items[i].keys.couponcode + "</option>");
-                            $("#global_code_2").append("<option data-attribute-validfrom='" + result.items[i].values.validfrom + "' data-attribute-validto='" + result.items[i].values.validto + "' value=" + encodeURI(result.items[i].keys.couponcode) + ">" + result.items[i].keys.couponcode + "</option>");
-                            $("#global_code_3").append("<option data-attribute-validfrom='" + result.items[i].values.validfrom + "' data-attribute-validto='" + result.items[i].values.validto + "' value=" + encodeURI(result.items[i].keys.couponcode) + ">" + result.items[i].keys.couponcode + "</option>");
-                            $("#global_code_4").append("<option data-attribute-validfrom='" + result.items[i].values.validfrom + "' data-attribute-validto='" + result.items[i].values.validto + "' value=" + encodeURI(result.items[i].keys.couponcode) + ">" + result.items[i].keys.couponcode + "</option>");
-                            $("#global_code_5").append("<option data-attribute-validfrom='" + result.items[i].values.validfrom + "' data-attribute-validto='" + result.items[i].values.validto + "' value=" + encodeURI(result.items[i].keys.couponcode) + ">" + result.items[i].keys.couponcode + "</option>");
-                        }                    
+                if ( result.items.length > 0 ) {
+                    for (i = 0; i < result.items.length; ++i) {
+                        if ( debug ) {
+                            console.log(result.items[i].keys.couponcode);
+                        }
+                        // do something with `substr[i]
+                        $("#global_code_1").append("<option data-attribute-validfrom='" + result.items[i].values.validfrom + "' data-attribute-validto='" + result.items[i].values.validto + "' value=" + encodeURI(result.items[i].keys.couponcode) + ">" + result.items[i].keys.couponcode + "</option>");
+                        $("#global_code_2").append("<option data-attribute-validfrom='" + result.items[i].values.validfrom + "' data-attribute-validto='" + result.items[i].values.validto + "' value=" + encodeURI(result.items[i].keys.couponcode) + ">" + result.items[i].keys.couponcode + "</option>");
+                        $("#global_code_3").append("<option data-attribute-validfrom='" + result.items[i].values.validfrom + "' data-attribute-validto='" + result.items[i].values.validto + "' value=" + encodeURI(result.items[i].keys.couponcode) + ">" + result.items[i].keys.couponcode + "</option>");
+                        $("#global_code_4").append("<option data-attribute-validfrom='" + result.items[i].values.validfrom + "' data-attribute-validto='" + result.items[i].values.validto + "' value=" + encodeURI(result.items[i].keys.couponcode) + ">" + result.items[i].keys.couponcode + "</option>");
+                        $("#global_code_5").append("<option data-attribute-validfrom='" + result.items[i].values.validfrom + "' data-attribute-validto='" + result.items[i].values.validto + "' value=" + encodeURI(result.items[i].keys.couponcode) + ">" + result.items[i].keys.couponcode + "</option>");
                     }                    
                 }
-
 
                 updateApiStatus("onlinecodes-api", true);
             }
         });
     }
 
-    function lookupPromos() {
+    function lookupPromos(fuel2Token) {
 
         // access offer types and build select input
         $.ajax({
 
-            url: "/dataextension/lookup/promotions",
+            url: "/dataextension/lookup/promotions/" + fuel2Token,
             error: function() {
                 updateApiStatus("instorecodes-api", false);
             }, 
@@ -824,11 +847,11 @@ define([
 
                     if ( result.items[i].values.priceeventreasoncode != 'Event Reason Code' ) {
                         // do something with `substr[i]
-                        $("#instore_code_1").append("<option data-attribute-loyalty=" + result.items[i].values.bispromotionheader + " data-attribute-validfrom=" + result.items[i].values.datefrom + " data-attribute-validto=" + result.items[i].values.dateto + " value=" + encodeURI(result.items[i].keys.discountid) + ">" + result.items[i].keys.discountid + " - " + result.items[i].values.name + "</option>");
-                        $("#instore_code_2").append("<option data-attribute-loyalty=" + result.items[i].values.bispromotionheader + " data-attribute-validfrom=" + result.items[i].values.datefrom + " data-attribute-validto=" + result.items[i].values.dateto + " value=" + encodeURI(result.items[i].keys.discountid) + ">" + result.items[i].keys.discountid + " - " + result.items[i].values.name + "</option>");
-                        $("#instore_code_3").append("<option data-attribute-loyalty=" + result.items[i].values.bispromotionheader + " data-attribute-validfrom=" + result.items[i].values.datefrom + " data-attribute-validto=" + result.items[i].values.dateto + " value=" + encodeURI(result.items[i].keys.discountid) + ">" + result.items[i].keys.discountid + " - " + result.items[i].values.name + "</option>");
-                        $("#instore_code_4").append("<option data-attribute-loyalty=" + result.items[i].values.bispromotionheader + " data-attribute-validfrom=" + result.items[i].values.datefrom + " data-attribute-validto=" + result.items[i].values.dateto + " value=" + encodeURI(result.items[i].keys.discountid) + ">" + result.items[i].keys.discountid + " - " + result.items[i].values.name + "</option>");
-                        $("#instore_code_5").append("<option data-attribute-loyalty=" + result.items[i].values.bispromotionheader + " data-attribute-validfrom=" + result.items[i].values.datefrom + " data-attribute-validto=" + result.items[i].values.dateto + " value=" + encodeURI(result.items[i].keys.discountid) + ">" + result.items[i].keys.discountid + " - " + result.items[i].values.name + "</option>");
+                        $("#instore_code_1").append(`<option data-attribute-loyalty=${result.items[i].values.bispromotionheader} data-attribute-validfrom=${result.items[i].values.datefrom} data-attribute-validto=${result.items[i].values.dateto} data-attribute-discountid=${result.items[i].keys.discountid} value=${encodeURI(result.items[i].values.discountmediaid)}>${result.items[i].keys.discountid} - ${result.items[i].values.name}</option>`);
+                        $("#instore_code_2").append(`<option data-attribute-loyalty=${result.items[i].values.bispromotionheader} data-attribute-validfrom=${result.items[i].values.datefrom} data-attribute-validto=${result.items[i].values.dateto} data-attribute-discountid=${result.items[i].keys.discountid} value=${encodeURI(result.items[i].values.discountmediaid)}>${result.items[i].keys.discountid} - ${result.items[i].values.name}</option>`);
+                        $("#instore_code_3").append(`<option data-attribute-loyalty=${result.items[i].values.bispromotionheader} data-attribute-validfrom=${result.items[i].values.datefrom} data-attribute-validto=${result.items[i].values.dateto} data-attribute-discountid=${result.items[i].keys.discountid} value=${encodeURI(result.items[i].values.discountmediaid)}>${result.items[i].keys.discountid} - ${result.items[i].values.name}</option>`);
+                        $("#instore_code_4").append(`<option data-attribute-loyalty=${result.items[i].values.bispromotionheader} data-attribute-validfrom=${result.items[i].values.datefrom} data-attribute-validto=${result.items[i].values.dateto} data-attribute-discountid=${result.items[i].keys.discountid} value=${encodeURI(result.items[i].values.discountmediaid)}>${result.items[i].keys.discountid} - ${result.items[i].values.name}</option>`);
+                        $("#instore_code_5").append(`<option data-attribute-loyalty=${result.items[i].values.bispromotionheader} data-attribute-validfrom=${result.items[i].values.datefrom} data-attribute-validto=${result.items[i].values.dateto} data-attribute-discountid=${result.items[i].keys.discountid} value=${encodeURI(result.items[i].values.discountmediaid)}>${result.items[i].keys.discountid} - ${result.items[i].values.name}</option>`);
                     }
                 }
                 updateApiStatus("instorecodes-api", true);
@@ -837,12 +860,12 @@ define([
         });
     }
 
-    function lookupTemplates() {
+    function lookupTemplates(fuel2Token) {
 
         // access offer types and build select input
         $.ajax({
 
-            url: "/dataextension/lookup/templates", 
+            url: "/dataextension/lookup/templates/" + fuel2Token, 
             error: function() {
                 updateApiStatus("email-api", false);
             }, 
@@ -866,7 +889,7 @@ define([
                 // access offer types and build select input
                 $.ajax({
 
-                    url: "/dataextension/lookup/campaigns", 
+                    url: "/dataextension/lookup/campaigns/" + fuel2Token, 
                     error: function() {
                         updateApiStatus("email-api", false);
                     }, 
@@ -909,11 +932,11 @@ define([
 
     }
 
-    function lookupControlGroups() {
+    function lookupControlGroups(fuel2Token) {
 
         // access offer types and build select input
         $.ajax({
-            url: "/dataextension/lookup/controlgroups",
+            url: "/dataextension/lookup/controlgroups/" + fuel2Token,
             error: function() {
                 updateApiStatus("controlgroup-api", false);
             },  
@@ -937,11 +960,11 @@ define([
         });
     }
 
-    function lookupUpdateContacts() {
+    function lookupUpdateContacts(fuel2Token) {
 
         // access offer types and build select input
         $.ajax({
-            url: "/dataextension/lookup/updatecontacts",
+            url: "/dataextension/lookup/updatecontacts/" + fuel2Token,
             error: function() {
                 updateApiStatus("updatecontacts-api", false);
             },  
@@ -965,11 +988,11 @@ define([
         });
     }
 
-    function lookupVoucherPots() {
+    function lookupVoucherPots(fuel2Token) {
 
         // access offer types and build select input
         $.ajax({
-            url: "/dataextension/lookup/voucherpots",
+            url: "/dataextension/lookup/voucherpots/" + fuel2Token,
             error: function() {
                 updateApiStatus("voucherpot-api", false);
             },  
@@ -1012,22 +1035,30 @@ define([
 
     function onGetTokens (tokens) {
         // Response: tokens == { token: <legacy token>, fuel2token: <fuel api token> }
-        // console.log(tokens);
+
+        console.log("Current Fuel 2 Token object is: ");
+        console.log(tokens);
+
+        console.log("The actual token is: ");
+        console.log(tokens.fuel2token);
+
+        fuel2Token = tokens.fuel2token;
+
     }
 
     function onGetEndpoints (endpoints) {
         // Response: endpoints == { restHost: <url> } i.e. "rest.s1.qa1.exacttarget.com"
-        // console.log(endpoints);
+        console.log(endpoints);
     }
 
     function onGetSchema (payload) {
         // Response: payload == { schema: [ ... ] };
-        // console.log('requestedSchema payload = ' + JSON.stringify(payload, null, 2));
+        console.log('requestedSchema payload = ' + JSON.stringify(payload, null, 2));
     }
 
     function onGetCulture (culture) {
         // Response: culture == 'en-US'; culture == 'de-DE'; culture == 'fr'; etc.
-        // console.log('requestedCulture culture = ' + JSON.stringify(culture, null, 2));
+        console.log('requestedCulture culture = ' + JSON.stringify(culture, null, 2));
     }
 
     function onClickedNext () {
@@ -1369,16 +1400,19 @@ define([
      * Function add data to data extension
      */
 
-    function saveToDataExtension(payloadToSave) {
+    function saveToDataExtension(payloadToSave, fuel2Token) {
 
         if ( debug ) {
             console.log("Data Object to be saved is: ");
             console.log(payloadToSave);
         }
 
+        console.log("The fuel token passed to the save function is:");
+        console.log(fuel2Token);
+
         try {
             $.ajax({ 
-                url: '/dataextension/add',
+                url: '/dataextension/add/' + fuel2Token,
                 type: 'POST',
                 data: JSON.stringify(payloadToSave),
                 contentType: 'application/json',                     
@@ -1410,7 +1444,7 @@ define([
      * Function add data to data extension
      */
 
-    function updateExistingPromotion(hiddenPromotionKey, payloadToSave) {
+    function updateExistingPromotion(hiddenPromotionKey, payloadToSave, fuel2Token) {
 
         if ( debug ) {
             console.log("Data Object to be updated is: ");
@@ -1419,7 +1453,7 @@ define([
 
         try {
             $.ajax({ 
-                url: '/dataextension/update-existing',
+                url: '/dataextension/update-existing/' +  fuel2Token,
                 type: 'POST',
                 data: JSON.stringify(payloadToSave),
                 contentType: 'application/json',                     
@@ -1444,7 +1478,7 @@ define([
 
     }
 
-    function setLive(hiddenPromotionKey) {
+    function setLive(hiddenPromotionKey, fuel2Token) {
         if ( debug ) {
             console.log("Key for updates is: ");
             console.log(hiddenPromotionKey);
@@ -1462,7 +1496,7 @@ define([
 
         try {
             $.ajax({ 
-                url: '/dataextension/set-live',
+                url: '/dataextension/set-live/' + fuel2Token,
                 type: 'POST',
                 data: JSON.stringify(updateNode),
                 contentType: 'application/json',                     

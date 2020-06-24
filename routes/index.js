@@ -3,10 +3,13 @@
 // Deps
 var activity = require('./activity');
 
+console.log("Loaded Index.js");
+
 /*
  * GET home page.
  */
 exports.index = function(req, res){
+    console.dir("index js index exports function");
     if( !req.session.token ) {
         res.render( 'index', {
             title: 'Unauthenticated',
