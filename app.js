@@ -91,8 +91,9 @@ const templatePayload = {
 // Configure Express master
 app.set('port', process.env.PORT || 3000);
 app.use(bodyParser.raw({type: 'application/jwt'}));
-
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());
 
 app.use(bodyParser.urlencoded({ extended: false }));
 
@@ -885,7 +886,7 @@ app.post('/dataextension/add/:fuel2Token', async function (req, res){
 });
 
 function getDateString(dateOffSetted) {
-	let date_ob = dateOffSetted;
+	let date_ob = new Date(dateOffSetted);
 	let date = ("0" + date_ob.getDate()).slice(-2);
 	let month = ("0" + (date_ob.getMonth() + 1)).slice(-2);
 	let year = date_ob.getFullYear();
@@ -910,7 +911,7 @@ function getDateAndOffSet() {
     dt.setTime(dt.getTime()+dt.getTimezoneOffset()*60*1000);
     //console.log(dt); // Gives Tue Mar 22 2016 04:00:00 GMT+0530 (IST)
 
-    var offset = -300; //Timezone offset for EST in minutes.
+    var offset = -360; //Timezone offset for EST in minutes.
     var estDate = new Date(dt.getTime() + offset*60*1000);
     console.log(estDate);
     return estDate; 
