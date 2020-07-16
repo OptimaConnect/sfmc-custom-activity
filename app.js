@@ -216,14 +216,14 @@ const saveToDataExtension = (targetUrl, payload, key, dataType, keyName) => new 
 	        "keys": {
 	            [keyName]: (parseInt(key) + 1)
 	        },
-	        "values": payload.control,
+	        "values": payload.not_control,
 
     	},
     	{
 	        "keys": {
 	            [keyName]: (parseInt(key) + 2)
 	        },
-	        "values": payload.not_control,
+	        "values": payload.control,
 	        
     	}];
     	console.dir(insertPayload);
@@ -667,6 +667,13 @@ function odbcDateTimeEnforcement(dateString) {
 }
 
 function buildCommunicationCellPayload(payload) {
+
+	const channel = parseInt(payload["channel"]);
+
+	if (isNaN(channel)) {
+		throw new Error(`Invalid channel value: ${payload["channel"]}`);
+	}
+
 	var communicationCellData = {
 			"not_control": {
 		    	"cell_code"					: payload["cell_code"],
@@ -674,9 +681,9 @@ function buildCommunicationCellPayload(payload) {
 		        "campaign_name"				: payload["campaign_name"],
 		        "campaign_id"				: payload["campaign_id"],
 		        "campaign_code"				: payload["campaign_code"],
-		        "cell_type"					: "1",
-		        "channel"					: "2",
-		        "is_putput_flag"			: "1"				
+		        "cell_type"					: 1,
+		        "channel"					: channel,
+		        "is_putput_flag"			: 1				
 			},
 			"control": {
 		    	"cell_code"					: payload["cell_code"],
@@ -684,9 +691,9 @@ function buildCommunicationCellPayload(payload) {
 		        "campaign_name"				: payload["campaign_name"],
 		        "campaign_id"				: payload["campaign_id"],
 		        "campaign_code"				: payload["campaign_code"],
-		        "cell_type"					: "2",
-		        "channel"					: "2",
-		        "is_putput_flag"			: "0"				
+		        "cell_type"					: 2,
+		        "channel"					: channel,
+		        "is_putput_flag"			: 0				
 			}
 	};
 	console.dir(communicationCellData);
