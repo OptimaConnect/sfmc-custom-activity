@@ -339,7 +339,7 @@ define([
         // if channel is PUSH, hide codes 2345 on both instore and online
         $("#channel").change(function() {
             // set instant win to opposite
-            if ( $("#channel").val() == "3" || $("#channel").val() == "4") {
+            if ( $("#channel").val() == "5" || $("#channel").val() == "6") {
 
                 $(".hide-code").hide();
                 $("#code2").hide();
