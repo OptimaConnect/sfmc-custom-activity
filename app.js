@@ -1,6 +1,7 @@
 'use strict';
 
 // Module Dependencies
+require('dotenv').config();
 const axios 			= require('axios');
 var express     		= require('express');
 var bodyParser  		= require('body-parser');
