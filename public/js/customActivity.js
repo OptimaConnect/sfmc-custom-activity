@@ -1753,7 +1753,7 @@ define([
     }
 
     function cleanUpValueText(valueString) {
-        return decodeURI(valueString);
+        return encodeURI(valueString);
     }
 
     function save() {
