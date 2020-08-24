@@ -29,21 +29,37 @@ define([
         console.log("Current Step is: " + currentStep);
     }
 
-    setTimeout(function(){ 
-        $("#spinner").hide();
-    }, 30000);
+    let development = false;
+    if (window.location.hostname == "localhost") {
+        development = true;
+    }
+
+    if (development) {
+        payload = {
+            arguments: {
+                execute: {
+                    inArguments: []
+                }
+            },
+            metaData: {
+                isConfigured: false
+            },
+            name: ""
+        }
+
+        document.getElementById("dev-helper-buttons").removeAttribute("hidden");
+        document.getElementById("dev-button-validate").onclick = onClickedNext;
+        document.getElementById("dev-button-initial").onclick = function () { showStep({key:"step0"}); }
+        document.getElementById("dev-button-online").onclick = function () { showStep({key:"step1"}); }
+        document.getElementById("dev-button-instore").onclick = function () { showStep({key:"step2"}); }
+        document.getElementById("dev-button-summary").onclick = function () { updateSummaryPage(buildActivityPayload()); showStep({key:"step3"}); }
+        document.getElementById("dev-button-cache-save").onclick = function () { window.localStorage.setItem("activity-cache", JSON.stringify(CreateCachePayload())); }
+        document.getElementById("dev-button-cache-load").onclick = function () { const data = window.localStorage.getItem("activity-cache"); initialize(JSON.parse(data)); }
+    } else {
+        document.getElementById("dev-helper-buttons").setAttribute("hidden", "");
+    }
 
     $(window).ready(onRender);
-
-    
-    //connection.on('requestedTokens', onGetTokens);
-    connection.on('requestedTokens', async function(tokens) {
-        console.log("Current Fuel 2 Token object is: ");
-        console.log(tokens);
-        console.log("The actual token is: ");
-        console.log(tokens.fuel2token);
-        fuel2Token = tokens.fuel2token; 
-    });
 
     connection.on('initActivity', initialize);
     connection.on('requestedEndpoints', onGetEndpoints);
@@ -51,12 +67,35 @@ define([
     connection.on('clickedBack', onClickedBack);
     connection.on('gotoStep', onGotoStep);  
 
-    function onRender() {
-        var debug = true;
+    async function onRender() {
+        if (development) {
+            onReceivedTokens({fuel2token: "testtoken"});
+        } else {
+            connection.trigger('requestTokens');
+        }
+
+        connection.trigger('requestEndpoints');
+    }
+
+    async function onReceivedTokens(tokens) {
+        fuel2Token = tokens.fuel2token;
+
+        let lookupTasks = [
+            lookupPromos(fuel2Token),
+            lookupGlobalCodes(fuel2Token),
+            lookupTemplates(fuel2Token),
+            lookupVoucherPots(fuel2Token),
+            lookupControlGroups(fuel2Token),
+            lookupUpdateContacts(fuel2Token)
+        ];
+        
+        await Promise.all(lookupTasks);
+
+        loadEvents();
+        setGlobalCodeBlock();
+        
         // JB will respond the first time 'ready' is called with 'initActivity'
         connection.trigger('ready');
-        connection.trigger('requestTokens');
-        connection.trigger('requestEndpoints');
     }
 
     function initialize (data) {
@@ -66,27 +105,6 @@ define([
 
         console.log("The Data sent to init is");
         console.log(data);
-
-
-        // attempt to get another token
-        connection.on('requestedTokens', async function(tokens) {
-            console.log("Current Fuel 2 Token object is: ");
-            console.log(tokens);
-            console.log("The actual token is: ");
-            console.log(tokens.fuel2token);
-            fuel2Token = tokens.fuel2token;
-
-            if ( fuel2Token ) {
-                lookupPromos(fuel2Token);
-                lookupGlobalCodes(fuel2Token);
-                lookupTemplates(fuel2Token);
-                lookupVoucherPots(fuel2Token);
-                lookupControlGroups(fuel2Token);
-                lookupUpdateContacts(fuel2Token);
-                loadEvents();
-                setGlobalCodeBlock();
-            } 
-        });
  
         if (data) {
             payload = data;
@@ -826,44 +844,42 @@ define([
         });
     }
 
-    function lookupPromos(fuel2Token) {
+    async function lookupPromos(fuel2Token) {
 
         // access offer types and build select input
-        $.ajax({
+        try {
+            let result = await $.ajax({
 
-            url: "/dataextension/lookup/promotions",
-            headers: {
-                Authorization: `Bearer ${fuel2Token}`
-            },
-            error: function() {
-                updateApiStatus("instorecodes-api", false);
-            }, 
-            success: function(result){
-
-                if ( debug ) {
-                    console.log('lookup promotions executed');
-                    console.log(result.items);               
+                url: "/dataextension/lookup/promotions",
+                headers: {
+                    Authorization: `Bearer ${fuel2Token}`
                 }
+            });
 
-                var i;
-                for (i = 0; i < result.items.length; ++i) {
-                    if ( debug ) {
-                        console.log(result.items[i].keys);
-                    }
-
-                    if ( result.items[i].values.priceeventreasoncode != 'Event Reason Code' ) {
-                        // do something with `substr[i]
-                        $("#instore_code_1").append(`<option data-attribute-loyalty=${result.items[i].values.bispromotionheader} data-attribute-validfrom=${result.items[i].values.datefrom} data-attribute-validto=${result.items[i].values.dateto} data-attribute-discountid=${result.items[i].keys.discountid} value=${encodeURI(result.items[i].values.discountmediaid)}>${result.items[i].keys.discountid} - ${result.items[i].values.name}</option>`);
-                        $("#instore_code_2").append(`<option data-attribute-loyalty=${result.items[i].values.bispromotionheader} data-attribute-validfrom=${result.items[i].values.datefrom} data-attribute-validto=${result.items[i].values.dateto} data-attribute-discountid=${result.items[i].keys.discountid} value=${encodeURI(result.items[i].values.discountmediaid)}>${result.items[i].keys.discountid} - ${result.items[i].values.name}</option>`);
-                        $("#instore_code_3").append(`<option data-attribute-loyalty=${result.items[i].values.bispromotionheader} data-attribute-validfrom=${result.items[i].values.datefrom} data-attribute-validto=${result.items[i].values.dateto} data-attribute-discountid=${result.items[i].keys.discountid} value=${encodeURI(result.items[i].values.discountmediaid)}>${result.items[i].keys.discountid} - ${result.items[i].values.name}</option>`);
-                        $("#instore_code_4").append(`<option data-attribute-loyalty=${result.items[i].values.bispromotionheader} data-attribute-validfrom=${result.items[i].values.datefrom} data-attribute-validto=${result.items[i].values.dateto} data-attribute-discountid=${result.items[i].keys.discountid} value=${encodeURI(result.items[i].values.discountmediaid)}>${result.items[i].keys.discountid} - ${result.items[i].values.name}</option>`);
-                        $("#instore_code_5").append(`<option data-attribute-loyalty=${result.items[i].values.bispromotionheader} data-attribute-validfrom=${result.items[i].values.datefrom} data-attribute-validto=${result.items[i].values.dateto} data-attribute-discountid=${result.items[i].keys.discountid} value=${encodeURI(result.items[i].values.discountmediaid)}>${result.items[i].keys.discountid} - ${result.items[i].values.name}</option>`);
-                    }
-                }
-                updateApiStatus("instorecodes-api", true);
+            if ( debug ) {
+                console.log('lookup promotions executed');
+                console.log(result.items);
             }
 
-        });
+            var i;
+            for (i = 0; i < result.items.length; ++i) {
+                if ( debug ) {
+                    console.log(result.items[i].keys);
+                }
+
+                if ( result.items[i].values.priceeventreasoncode != 'Event Reason Code' ) {
+                    // do something with `substr[i]
+                    $("#instore_code_1").append(`<option data-attribute-loyalty=${result.items[i].values.bispromotionheader} data-attribute-validfrom=${result.items[i].values.datefrom} data-attribute-validto=${result.items[i].values.dateto} data-attribute-discountid=${result.items[i].keys.discountid} value=${encodeURI(result.items[i].values.discountmediaid)}>${result.items[i].keys.discountid} - ${result.items[i].values.name}</option>`);
+                    $("#instore_code_2").append(`<option data-attribute-loyalty=${result.items[i].values.bispromotionheader} data-attribute-validfrom=${result.items[i].values.datefrom} data-attribute-validto=${result.items[i].values.dateto} data-attribute-discountid=${result.items[i].keys.discountid} value=${encodeURI(result.items[i].values.discountmediaid)}>${result.items[i].keys.discountid} - ${result.items[i].values.name}</option>`);
+                    $("#instore_code_3").append(`<option data-attribute-loyalty=${result.items[i].values.bispromotionheader} data-attribute-validfrom=${result.items[i].values.datefrom} data-attribute-validto=${result.items[i].values.dateto} data-attribute-discountid=${result.items[i].keys.discountid} value=${encodeURI(result.items[i].values.discountmediaid)}>${result.items[i].keys.discountid} - ${result.items[i].values.name}</option>`);
+                    $("#instore_code_4").append(`<option data-attribute-loyalty=${result.items[i].values.bispromotionheader} data-attribute-validfrom=${result.items[i].values.datefrom} data-attribute-validto=${result.items[i].values.dateto} data-attribute-discountid=${result.items[i].keys.discountid} value=${encodeURI(result.items[i].values.discountmediaid)}>${result.items[i].keys.discountid} - ${result.items[i].values.name}</option>`);
+                    $("#instore_code_5").append(`<option data-attribute-loyalty=${result.items[i].values.bispromotionheader} data-attribute-validfrom=${result.items[i].values.datefrom} data-attribute-validto=${result.items[i].values.dateto} data-attribute-discountid=${result.items[i].keys.discountid} value=${encodeURI(result.items[i].values.discountmediaid)}>${result.items[i].keys.discountid} - ${result.items[i].values.name}</option>`);
+                }
+            }
+            updateApiStatus("instorecodes-api", true);
+        } catch (error) {
+            updateApiStatus("instorecodes-api", false);
+        }
     }
 
     function lookupTemplates(fuel2Token) {
@@ -1006,39 +1022,36 @@ define([
         });
     }
 
-    function lookupVoucherPots(fuel2Token) {
-
-        // access offer types and build select input
-        $.ajax({
-            url: "/dataextension/lookup/voucherpots",
-            headers: {
-                Authorization: `Bearer ${fuel2Token}`
-            },
-            error: function() {
-                updateApiStatus("voucherpot-api", false);
-            },  
-            success: function(result){
-
-                if ( debug ) {
-                    console.log('lookup voucher pots executed');
-                    console.log(result.items);               
+    async function lookupVoucherPots(fuel2Token) {
+        try {
+            let result = await $.ajax({
+                url: "/dataextension/lookup/voucherpots",
+                headers: {
+                    Authorization: `Bearer ${fuel2Token}`
                 }
+            });
 
-                var i;
-                for (i = 0; i < result.items.length; ++i) {
-                    if ( debug ) {
-                        console.log(result.items[i]);
-                    }
-                    // do something with substr[i]
-                    $("#unique_code_1").append("<option data-attribute-count="+ result.items[i].values.count +" value=" + result.items[i].values.dataextensionname + ">" + result.items[i].values.dataextensionname + " - Type: " + result.items[i].values.type.toUpperCase() + " - Unclaimed Rows: " + (result.items[i].values.count - result.items[i].values.claimedrows) + "</option>");
-                    $("#unique_code_2").append("<option data-attribute-count="+ result.items[i].values.count +" value=" + result.items[i].values.dataextensionname + ">" + result.items[i].values.dataextensionname + " - Type: " + result.items[i].values.type.toUpperCase() + " - Unclaimed Rows: " + (result.items[i].values.count - result.items[i].values.claimedrows)  + "</option>");
-                    $("#unique_code_3").append("<option data-attribute-count="+ result.items[i].values.count +" value=" + result.items[i].values.dataextensionname + ">" + result.items[i].values.dataextensionname + " - Type: " + result.items[i].values.type.toUpperCase() + " - Unclaimed Rows: " + (result.items[i].values.count - result.items[i].values.claimedrows)  + "</option>");
-                    $("#unique_code_4").append("<option data-attribute-count="+ result.items[i].values.count +" value=" + result.items[i].values.dataextensionname + ">" + result.items[i].values.dataextensionname + " - Type: " + result.items[i].values.type.toUpperCase() + " - Unclaimed Rows: " + (result.items[i].values.count - result.items[i].values.claimedrows)  + "</option>");
-                    $("#unique_code_5").append("<option data-attribute-count="+ result.items[i].values.count +" value=" + result.items[i].values.dataextensionname + ">" + result.items[i].values.dataextensionname + " - Type: " + result.items[i].values.type.toUpperCase() + " - Unclaimed Rows: " + (result.items[i].values.count - result.items[i].values.claimedrows)  + "</option>");
-                }
-                updateApiStatus("voucherpot-api", true);
+            if ( debug ) {
+                console.log('lookup voucher pots executed');
+                console.log(result.items);               
             }
-        });
+
+            var i;
+            for (i = 0; i < result.items.length; ++i) {
+                if ( debug ) {
+                    console.log(result.items[i]);
+                }
+                // do something with substr[i]
+                $("#unique_code_1").append("<option data-attribute-count="+ result.items[i].values.count +" value=" + result.items[i].values.dataextensionname + ">" + result.items[i].values.dataextensionname + " - Type: " + result.items[i].values.type.toUpperCase() + " - Unclaimed Rows: " + (result.items[i].values.count - result.items[i].values.claimedrows) + "</option>");
+                $("#unique_code_2").append("<option data-attribute-count="+ result.items[i].values.count +" value=" + result.items[i].values.dataextensionname + ">" + result.items[i].values.dataextensionname + " - Type: " + result.items[i].values.type.toUpperCase() + " - Unclaimed Rows: " + (result.items[i].values.count - result.items[i].values.claimedrows)  + "</option>");
+                $("#unique_code_3").append("<option data-attribute-count="+ result.items[i].values.count +" value=" + result.items[i].values.dataextensionname + ">" + result.items[i].values.dataextensionname + " - Type: " + result.items[i].values.type.toUpperCase() + " - Unclaimed Rows: " + (result.items[i].values.count - result.items[i].values.claimedrows)  + "</option>");
+                $("#unique_code_4").append("<option data-attribute-count="+ result.items[i].values.count +" value=" + result.items[i].values.dataextensionname + ">" + result.items[i].values.dataextensionname + " - Type: " + result.items[i].values.type.toUpperCase() + " - Unclaimed Rows: " + (result.items[i].values.count - result.items[i].values.claimedrows)  + "</option>");
+                $("#unique_code_5").append("<option data-attribute-count="+ result.items[i].values.count +" value=" + result.items[i].values.dataextensionname + ">" + result.items[i].values.dataextensionname + " - Type: " + result.items[i].values.type.toUpperCase() + " - Unclaimed Rows: " + (result.items[i].values.count - result.items[i].values.claimedrows)  + "</option>");
+            }
+            updateApiStatus("voucherpot-api", true);
+        } catch (error) {
+            updateApiStatus("voucherpot-api", false);
+        }
     }
 
     function toggleStepError(errorStep, errorStatus) {
@@ -1784,25 +1797,15 @@ define([
 
     function save() {
 
-        var buildPayload = buildActivityPayload();
+        const cachePayload = CreateCachePayload();
 
-        // replace with res from save to DE function
+        // trigger payload save
+        connection.trigger('updateActivity', payload);
+    }
 
-        if (debug) {
-            console.log("Build Payload is:");
-            console.log(JSON.stringify(buildPayload));
-            console.log(buildPayload.promotion_key);
-        }
-
-        var argPromotionKey;
-
-        for ( var w = 0; w < buildPayload.length; w++ ) {
-            console.log("inside build payload loop");
-            console.log(buildPayload[w]);
-            if ( buildPayload[w].key == "promotion_key_hidden") {
-                argPromotionKey = buildPayload[w].value;
-            }
-        }
+    function CreateCachePayload() {
+        const buildPayload = buildActivityPayload();
+        const argPromotionKey = buildPayload.find(element => element.key == "promotion_key_hidden").value;
 
         console.log("arg key");
         console.log(argPromotionKey); 
@@ -1830,8 +1833,7 @@ define([
             console.log(payload.arguments.execute.inArguments);
         }
 
-        // trigger payload save
-        connection.trigger('updateActivity', payload);
+        return payload;
     }
 
 });
