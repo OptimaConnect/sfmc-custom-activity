@@ -62,6 +62,7 @@ define([
     $(window).ready(onRender);
 
     connection.on('initActivity', initialize);
+    connection.on('requestedTokens', onReceivedTokens);
     connection.on('requestedEndpoints', onGetEndpoints);
     connection.on('clickedNext', onClickedNext);
     connection.on('clickedBack', onClickedBack);
