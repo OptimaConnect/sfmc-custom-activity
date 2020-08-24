@@ -792,7 +792,10 @@ define([
 
         // access offer types and build select input
         $.ajax({
-            url: "/dataextension/lookup/globalcodes/" + fuel2Token, 
+            url: "/dataextension/lookup/globalcodes", 
+            headers: {
+                Authorization: `Bearer ${fuel2Token}`
+            },
             error: function() {
                 updateApiStatus("onlinecodes-api", false);
             },
@@ -828,7 +831,10 @@ define([
         // access offer types and build select input
         $.ajax({
 
-            url: "/dataextension/lookup/promotions/" + fuel2Token,
+            url: "/dataextension/lookup/promotions",
+            headers: {
+                Authorization: `Bearer ${fuel2Token}`
+            },
             error: function() {
                 updateApiStatus("instorecodes-api", false);
             }, 
@@ -865,7 +871,10 @@ define([
         // access offer types and build select input
         $.ajax({
 
-            url: "/dataextension/lookup/templates/" + fuel2Token, 
+            url: "/dataextension/lookup/templates",
+            headers: {
+                Authorization: `Bearer ${fuel2Token}`
+            },
             error: function() {
                 updateApiStatus("email-api", false);
             }, 
@@ -889,7 +898,10 @@ define([
                 // access offer types and build select input
                 $.ajax({
 
-                    url: "/dataextension/lookup/campaigns/" + fuel2Token, 
+                    url: "/dataextension/lookup/campaigns",
+                    headers: {
+                        Authorization: `Bearer ${fuel2Token}`
+                    },
                     error: function() {
                         updateApiStatus("email-api", false);
                     }, 
@@ -936,7 +948,10 @@ define([
 
         // access offer types and build select input
         $.ajax({
-            url: "/dataextension/lookup/controlgroups/" + fuel2Token,
+            url: "/dataextension/lookup/controlgroups",
+            headers: {
+                Authorization: `Bearer ${fuel2Token}`
+            },
             error: function() {
                 updateApiStatus("controlgroup-api", false);
             },  
@@ -964,7 +979,10 @@ define([
 
         // access offer types and build select input
         $.ajax({
-            url: "/dataextension/lookup/updatecontacts/" + fuel2Token,
+            url: "/dataextension/lookup/updatecontacts",
+            headers: {
+                Authorization: `Bearer ${fuel2Token}`
+            },
             error: function() {
                 updateApiStatus("updatecontacts-api", false);
             },  
@@ -992,7 +1010,10 @@ define([
 
         // access offer types and build select input
         $.ajax({
-            url: "/dataextension/lookup/voucherpots/" + fuel2Token,
+            url: "/dataextension/lookup/voucherpots",
+            headers: {
+                Authorization: `Bearer ${fuel2Token}`
+            },
             error: function() {
                 updateApiStatus("voucherpot-api", false);
             },  
@@ -1412,7 +1433,10 @@ define([
 
         try {
             $.ajax({ 
-                url: '/dataextension/add/' + fuel2Token,
+                url: '/dataextension/add',
+                headers: {
+                    Authorization: `Bearer ${fuel2Token}`
+                },
                 type: 'POST',
                 data: JSON.stringify(payloadToSave),
                 contentType: 'application/json',                     
@@ -1453,7 +1477,10 @@ define([
 
         try {
             $.ajax({ 
-                url: '/dataextension/update-existing/' +  fuel2Token,
+                url: '/dataextension/update-existing',
+                headers: {
+                    Authorization: `Bearer ${fuel2Token}`
+                },
                 type: 'POST',
                 data: JSON.stringify(payloadToSave),
                 contentType: 'application/json',                     
@@ -1496,7 +1523,10 @@ define([
 
         try {
             $.ajax({ 
-                url: '/dataextension/set-live/' + fuel2Token,
+                url: '/dataextension/set-live',
+                headers: {
+                    Authorization: `Bearer ${fuel2Token}`
+                },
                 type: 'POST',
                 data: JSON.stringify(updateNode),
                 contentType: 'application/json',                     

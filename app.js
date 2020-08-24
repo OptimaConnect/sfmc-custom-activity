@@ -103,6 +103,8 @@ app.use(bodyParser.json());
 // Express in Development Mode
 if ('development' == app.get('env')) {
 	app.use(errorhandler());
+} else {
+	app.use(journeyTokenHandler.validateToken);
 }
 
 const getOauth2Token = () => new Promise((resolve, reject) => {
@@ -121,33 +123,6 @@ const getOauth2Token = () => new Promise((resolve, reject) => {
 	})
 	.catch(function (error) {
 		console.dir("Error getting Oauth Token");
-		return reject(error);
-	});
-});
-
-const validateTokenContext = (fuel2Token) => new Promise((resolve, reject) => {
-
-	console.dir("The context endpoint is: ");
-
-	console.dir(contextUrl);
-
-	console.dir("The fuel token passed to this function is: ");
-
-	console.dir(fuel2Token);
-
-	axios({
-		method: 'get',
-		url: contextUrl,
-		headers: {'Authorization': 'Bearer '.concat(fuel2Token)}
-	})
-	.then(function (tokenResponse) {
-		console.dir('Token Response');
-		console.dir(tokenResponse);
-		return resolve(tokenResponse);
-	})
-	.catch(function (error) {
-		console.dir("Error getting token context response");
-		console.dir(error);
 		return reject(error);
 	});
 });
@@ -336,274 +311,172 @@ const updateIncrements = (targetUrl, promotionObject, communicationCellObject, m
 });
 
 //Fetch increment values
-app.get("/dataextension/lookup/increments/:fuel2Token", (req, res, next) => {
+app.get("/dataextension/lookup/increments", (req, res, next) => {
 
-	console.dir("The fuel token sent is: ");
-	console.dir(req.params.fuel2Token);
+	getOauth2Token().then((tokenResponse) => {
 
-	var token = req.params.fuel2Token;
-
-	if ( token ) {
-
-		validateTokenContext(token).then((tokenContext) => {
-
-			getOauth2Token().then((tokenResponse) => {
-
-				axios.get(incrementsUrl, { 
-					headers: { 
-						Authorization: tokenResponse
-					}
-				})
-				.then(response => {
-					// If request is good... 
-					res.json(response.data);
-				})
-				.catch((error) => {
-				    console.dir("Error getting increments");
-				    console.dir(error);
-				});
-			})				
+		axios.get(incrementsUrl, { 
+			headers: { 
+				Authorization: tokenResponse
+			}
 		})
-	}
+		.then(response => {
+			// If request is good... 
+			res.json(response.data);
+		})
+		.catch((error) => {
+			console.dir("Error getting increments");
+			console.dir(error);
+		});
+	})
 });
 
 //Fetch rows from promotions data extension
-app.get("/dataextension/lookup/promotions/:fuel2Token", (req, res, next) => {
+app.get("/dataextension/lookup/promotions", (req, res, next) => {
 
-	console.dir("The fuel token sent is: ");
-	console.dir(req.params.fuel2Token);
-	var token = req.params.fuel2Token;
+	getOauth2Token().then((tokenResponse) => {
 
-	if ( token ) {
-
-		validateTokenContext(token).then((tokenContext) => {
-
-			getOauth2Token().then((tokenResponse) => {
-
-				axios.get(promotionsUrl, { 
-					headers: { 
-						Authorization: tokenResponse
-					}
-				})
-				.then(response => {
-					// If request is good... 
-					res.json(response.data);
-				})
-				.catch((error) => {
-				    console.dir("Error getting promotions");
-				    console.dir(error);
-				});
-			})					
+		axios.get(promotionsUrl, { 
+			headers: { 
+				Authorization: tokenResponse
+			}
 		})
-	}	
+		.then(response => {
+			// If request is good... 
+			res.json(response.data);
+		})
+		.catch((error) => {
+			console.dir("Error getting promotions");
+			console.dir(error);
+		});
+	})
 });
 
 //Fetch rows from promotions data extension
-app.get("/dataextension/lookup/campaigns/:fuel2Token", (req, res, next) => {
+app.get("/dataextension/lookup/campaigns", (req, res, next) => {
 
-	console.dir("The fuel token sent is: ");
-	console.dir(req.params.fuel2Token);
+	getOauth2Token().then((tokenResponse) => {
 
-	var token = req.params.fuel2Token;
-
-	if ( token ) {
-
-		validateTokenContext(token).then((tokenContext) => {
-
-			getOauth2Token().then((tokenResponse) => {
-
-				axios.get(getAllCampaigns, { 
-					headers: { 
-						Authorization: tokenResponse
-					}
-				})
-				.then(response => {
-					// If request is good... 
-					res.json(response.data);
-				})
-				.catch((error) => {
-				    console.dir("Error getting promotions");
-				    console.dir(error);
-				});
-			})					
+		axios.get(getAllCampaigns, { 
+			headers: { 
+				Authorization: tokenResponse
+			}
 		})
-	}		
+		.then(response => {
+			// If request is good... 
+			res.json(response.data);
+		})
+		.catch((error) => {
+			console.dir("Error getting promotions");
+			console.dir(error);
+		});
+	})	
 });
 
 //Fetch rows from promotions data extension
-app.get("/dataextension/lookup/globalcodes/:fuel2Token", (req, res, next) => {
+app.get("/dataextension/lookup/globalcodes", (req, res, next) => {
 
-	console.dir("The fuel token sent is: ");
-	console.dir(req.params.fuel2Token);
+	getOauth2Token().then((tokenResponse) => {
 
-	var token = req.params.fuel2Token;
-
-	if ( token ) {
-
-		validateTokenContext(token).then((tokenContext) => {
-
-			getOauth2Token().then((tokenResponse) => {
-
-				axios.get(globalCodesUrl, { 
-					headers: { 
-						Authorization: tokenResponse
-					}
-				})
-				.then(response => {
-					// If request is good... 
-					res.json(response.data);
-				})
-				.catch((error) => {
-				    console.dir("Error getting global code");
-				    console.dir(error);
-				});
-			})						
-		}).catch((error)  => {
-     		console.log("Not Authorised request made.");
-     		res.send("Not Authorised");
-     	})
-    }
+		axios.get(globalCodesUrl, { 
+			headers: { 
+				Authorization: tokenResponse
+			}
+		})
+		.then(response => {
+			// If request is good... 
+			res.json(response.data);
+		})
+		.catch((error) => {
+			console.dir("Error getting global code");
+			console.dir(error);
+		});
+	})
 });
 
 //Fetch rows from control group data extension
-app.get("/dataextension/lookup/controlgroups/:fuel2Token", (req, res, next) => {
+app.get("/dataextension/lookup/controlgroups", (req, res, next) => {
 
-	console.dir("The fuel token sent is: ");
-	console.dir(req.params.fuel2Token);
+	getOauth2Token().then((tokenResponse) => {
 
-	var token = req.params.fuel2Token;
-
-	if ( token ) {
-
-		validateTokenContext(token).then((tokenContext) => {
-
-			getOauth2Token().then((tokenResponse) => {
-
-				axios.get(controlGroupsUrl, { 
-					headers: { 
-						Authorization: tokenResponse
-					}
-				})
-				.then(response => {
-					// If request is good... 
-					res.json(response.data);
-				})
-				.catch((error) => {
-				    console.dir("Error getting control groups");
-				    console.dir(error);
-				});
-			})					
-		}).catch((error)  => {
-     		console.log("Not Authorised request made.");
-     		res.send("Not Authorised");
-     	})
-	}
+		axios.get(controlGroupsUrl, { 
+			headers: { 
+				Authorization: tokenResponse
+			}
+		})
+		.then(response => {
+			// If request is good... 
+			res.json(response.data);
+		})
+		.catch((error) => {
+			console.dir("Error getting control groups");
+			console.dir(error);
+		});
+	})
 });
 
 //Fetch rows from update contacts data extension
-app.get("/dataextension/lookup/updatecontacts/:fuel2Token", (req, res, next) => {
+app.get("/dataextension/lookup/updatecontacts", (req, res, next) => {
 
-	console.dir("The fuel token sent is: ");
-	console.dir(req.params.fuel2Token);
+	getOauth2Token().then((tokenResponse) => {
 
-	var token = req.params.fuel2Token;
-
-	if ( token ) {
-
-		validateTokenContext(token).then((tokenContext) => {
-
-			getOauth2Token().then((tokenResponse) => {
-
-				axios.get(updateContactsUrl, { 
-					headers: { 
-						Authorization: tokenResponse
-					}
-				})
-				.then(response => {
-					// If request is good... 
-					res.json(response.data);
-				})
-				.catch((error) => {
-				    console.dir("Error getting update contacts");
-				    console.dir(error);
-				});
-			})				
-		}).catch((error)  => {
-     		console.log("Not Authorised request made.");
-     		res.send("Not Authorised");
-     	})
-	}
+		axios.get(updateContactsUrl, { 
+			headers: { 
+				Authorization: tokenResponse
+			}
+		})
+		.then(response => {
+			// If request is good... 
+			res.json(response.data);
+		})
+		.catch((error) => {
+			console.dir("Error getting update contacts");
+			console.dir(error);
+		});
+	})
 });
 
 //Fetch rows from voucher data extension
-app.get("/dataextension/lookup/voucherpots/:fuel2Token", (req, res, next) => {
+app.get("/dataextension/lookup/voucherpots", (req, res, next) => {
 
-	console.dir("The fuel token sent is: ");
-	console.dir(req.params.fuel2Token);
+	getOauth2Token().then((tokenResponse) => {
 
-	var token = req.params.fuel2Token;
-
-	if ( token ) {
-
-		validateTokenContext(token).then((tokenContext) => {
-
-			getOauth2Token().then((tokenResponse) => {
-
-				axios.get(voucherPotsUrl, { 
-					headers: { 
-						Authorization: tokenResponse
-					}
-				})
-				.then(response => {
-					// If request is good... 
-					res.json(response.data);
-				})
-				.catch((error) => {
-				    console.dir("Error getting voucher pots");
-				    console.dir(error);
-				});
-			})					
-		}).catch((error)  => {
-     		console.log("Not Authorised request made.");
-     		res.send("Not Authorised");
-     	})
-	}
+		axios.get(voucherPotsUrl, { 
+			headers: { 
+				Authorization: tokenResponse
+			}
+		})
+		.then(response => {
+			// If request is good... 
+			res.json(response.data);
+		})
+		.catch((error) => {
+			console.dir("Error getting voucher pots");
+			console.dir(error);
+		});
+	})
 });
 
 //Fetch email templates
-app.get("/dataextension/lookup/templates/:fuel2Token", (req, res, next) => {
+app.get("/dataextension/lookup/templates", (req, res, next) => {
 
-	console.dir("The fuel token sent is: ");
-	console.dir(req.params.fuel2Token);
+	getOauth2Token().then((tokenResponse) => {
 
-	var token = req.params.fuel2Token;
-
-	if ( token ) {
-
-		validateTokenContext(token).then((tokenContext) => {
-
-			getOauth2Token().then((tokenResponse) => {
-
-			   	axios({
-					method: 'post',
-					url: templatesUrl,
-					headers: {'Authorization': tokenResponse},
-					data: templatePayload
-				})
-				.then(function (response) {
-					//console.dir(response.data);
-					res.json(response.data);
-				})
-				.catch(function (error) {
-					console.dir(error);
-					return error;
-				});
-			})					
-		}).catch((error)  => {
-     		console.log("Not Authorised request made.");
-     		res.send("Not Authorised");
-     	})
-	}
+		axios({
+			method: 'post',
+			url: templatesUrl,
+			headers: { 'Authorization': tokenResponse },
+			data: templatePayload
+		})
+		.then(function (response) {
+			//console.dir(response.data);
+			res.json(response.data);
+		})
+		.catch(function (error) {
+			console.dir(error);
+			return error;
+		});
+	})
 });
 
 function buildAssociationPayload(payload, incrementData, numberOfCodes) {
@@ -868,28 +741,16 @@ async function sendBackPayload(payload) {
 
 }
 // insert data into data extension
-app.post('/dataextension/add/:fuel2Token', async function (req, res){ 
-	console.dir("The fuel token sent is: ");
-	console.dir(req.params.fuel2Token);
+app.post('/dataextension/add', async function (req, res){ 
+	
 	console.dir("Dump request body");
 	console.dir(req.body);
 
-	var token = req.params.fuel2Token;
-
-	if ( token ) {
-
-		const tokenContextResponse  =  await validateTokenContext(token);
-		console.dir("The returned user id is:");
-		console.dir(tokenContextResponse.data.user);
-
-		if ( tokenContextResponse.data.user ) {
-			try {
-				const returnedPayload = await sendBackPayload(req.body)
-				res.send(JSON.stringify(returnedPayload));
-			} catch(err) {
-				console.dir(err);
-			}			
-		}
+	try {
+		const returnedPayload = await sendBackPayload(req.body)
+		res.send(JSON.stringify(returnedPayload));
+	} catch(err) {
+		console.dir(err);
 	}
 });
 
@@ -1380,58 +1241,32 @@ async function updateExistingPromotion(existingKey, payloadBody) {
 }
 
 // insert data into data extension
-app.post('/dataextension/set-live/:fuel2Token', async function (req, res){
-	console.dir("The fuel token sent is: ");
-	console.dir(req.params.fuel2Token); 
+app.post('/dataextension/set-live', async function (req, res){
 	console.dir("Dump update request body");
 	console.dir(req.body);
 	console.dir("the update key is");
 	console.dir(req.body[0].key);
 
-	var token = req.params.fuel2Token;
-
-	if ( token ) {
-
-		const tokenContextResponse  =  await validateTokenContext(token);
-		console.dir("The returned user id is:");
-		console.dir(tokenContextResponse.data.user);
-
-		if ( tokenContextResponse.data.user ) {
-			try {
-				const returnedUpdate = await setLive(req.body[0].key);
-				res.send(JSON.stringify(returnedUpdate));
-			} catch(err) {
-				console.dir(err);
-			}			
-		}
+	try {
+		const returnedUpdate = await setLive(req.body[0].key);
+		res.send(JSON.stringify(returnedUpdate));
+	} catch(err) {
+		console.dir(err);
 	}
 });
 
 // insert data into data extension
-app.post('/dataextension/update-existing/:fuel2Token', async function (req, res){ 
-	console.dir("The fuel token sent is: ");
-	console.dir(req.params.fuel2Token);
+app.post('/dataextension/update-existing', async function (req, res){ 
 	console.dir("Dump update request body");
 	console.dir(req.body);
 	console.dir("the update key is");
 	console.dir(req.body[0].value);
 
-	var token = req.params.fuel2Token;
-
-	if ( token ) {
-
-		const tokenContextResponse  =  await validateTokenContext(token);
-		console.dir("The returned user id is:");
-		console.dir(tokenContextResponse.data.user);
-
-		if ( tokenContextResponse.data.user ) {
-			try {
-				const updateExistingPromotionStatus = await updateExistingPromotion(req.body[0].value, req.body);
-				res.send({"success": "true"});
-			} catch(err) {
-				console.dir(err);
-			}			
-		}
+	try {
+		const updateExistingPromotionStatus = await updateExistingPromotion(req.body[0].value, req.body);
+		res.send({"success": "true"});
+	} catch(err) {
+		console.dir(err);
 	}
 });
 
