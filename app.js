@@ -14,6 +14,7 @@ var activity    		= require('./routes/activity');
 var urlencodedparser 	= bodyParser.urlencoded({extended:false});
 var app 				= express();
 var local       		= false;
+const journeyTokenHandler = require("./journeytokenhandler.js");
 
 // access Heroku variables
 if ( !local ) {
