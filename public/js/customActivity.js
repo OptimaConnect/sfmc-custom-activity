@@ -1724,7 +1724,7 @@ define([
                     }
 
                     $("#summary-main-setup").append('<dt class="slds-item_label slds-text-color_weak" title="'+summaryPayload[z].key+'"><b>'+cleanUpKeyText(summaryPayload[z].key)+'</b></dt>');
-                    $("#summary-main-setup").append('<dd class="slds-item_detail" title="Description for '+summaryPayload[z].value+'">'+cleanUpValueText(summaryPayload[z].value)+'</dd>');
+                    $("#summary-main-setup").append('<dd class="slds-item_detail" title="Description for '+summaryPayload[z].value+'">'+summaryPayload[z].value+'</dd>');
 
                 } else if ( summaryPayload[z].step == 2 ) {
 
@@ -1750,10 +1750,6 @@ define([
 
     function cleanUpKeyText(keyString) {
         return keyString.split("_").join(" ");
-    }
-
-    function cleanUpValueText(valueString) {
-        return encodeURI(valueString);
     }
 
     function save() {
