@@ -1768,14 +1768,14 @@ define([
                     }
 
                     $("#summary-main-setup").append('<dt class="slds-item_label slds-text-color_weak" title="'+summaryPayload[z].key+'"><b>'+cleanUpKeyText(summaryPayload[z].key)+'</b></dt>');
-                    $("#summary-main-setup").append('<dd class="slds-item_detail" title="Description for '+summaryPayload[z].value+'">'+summaryPayload[z].value+'</dd>');
+                    $("#summary-main-setup").append('<dd class="slds-item_detail" title="Description for '+summaryPayload[z].value+'">'+cleanUpValueText(summaryPayload[z].key, summaryPayload[z].value)+'</dd>');
 
                 } else if ( summaryPayload[z].step == 2 ) {
 
                     if ( summaryPromotionType == "online" || summaryPromotionType == "online_instore" ) {
 
                         $("#summary-online-setup").append('<dt class="slds-item_label slds-text-color_weak" title="'+summaryPayload[z].key+'"><b>'+cleanUpKeyText(summaryPayload[z].key)+'</b></dt>');
-                        $("#summary-online-setup").append('<dd class="slds-item_detail" title="Description for '+summaryPayload[z].value+'">'+summaryPayload[z].value+'</dd>');
+                        $("#summary-online-setup").append('<dd class="slds-item_detail" title="Description for '+summaryPayload[z].value+'">'+cleanUpValueText(summaryPayload[z].key, summaryPayload[z].value)+'</dd>');
 
                     }              
 
@@ -1784,7 +1784,7 @@ define([
                     if ( summaryPromotionType == "instore" || summaryPromotionType == "online_instore" || summaryPromotionType == "nocode" ) {
 
                         $("#summary-instore-setup").append('<dt class="slds-item_label slds-text-color_weak" title="'+summaryPayload[z].key+'"><b>'+cleanUpKeyText(summaryPayload[z].key)+'</b></dt>');
-                        $("#summary-instore-setup").append('<dd class="slds-item_detail" title="Description for '+summaryPayload[z].value+'">'+summaryPayload[z].value+'</dd>');
+                        $("#summary-instore-setup").append('<dd class="slds-item_detail" title="Description for '+summaryPayload[z].value+'">'+cleanUpValueText(summaryPayload[z].key, summaryPayload[z].value)+'</dd>');
                     
                     }     
                 }
@@ -1794,6 +1794,18 @@ define([
 
     function cleanUpKeyText(keyString) {
         return keyString.split("_").join(" ");
+    }
+
+    function cleanUpValueText(keyString, valueString) {
+        if (keyString == "email_template" ||
+            keyString == "control_group" ||
+            keyString == "update_contacts" ||
+            keyString.includes("global_code") ||
+			keyString.includes("instore_code")) {
+            return decodeURI(valueString);
+        } else {
+            return valueString;
+        }
     }
 
     function save() {
