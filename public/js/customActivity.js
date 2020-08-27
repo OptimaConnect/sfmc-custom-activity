@@ -950,10 +950,6 @@ define([
                         }
 
                         updateApiStatus("email-api", true);
-                        setTimeout(function(){ 
-                            $("#spinner").hide();
-                            console.log("here");
-                        }, 4000);
                     }
                 });
             }
@@ -1818,7 +1814,7 @@ define([
 
     function CreateCachePayload() {
         const buildPayload = buildActivityPayload();
-        const argPromotionKey = buildPayload.find(element => element.key == "promotion_key_hidden").value;
+        const argPromotionKey = buildPayload.find(element => element.key == "promotion_key_hidden")?.value;
 
         console.log("arg key");
         console.log(argPromotionKey); 
