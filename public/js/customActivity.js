@@ -807,42 +807,40 @@ define([
         $("#show_global_codes").show();
     }
 
-    function lookupGlobalCodes(fuel2Token) {
-
-        // access offer types and build select input
-        $.ajax({
-            url: "/dataextension/lookup/globalcodes", 
-            headers: {
-                Authorization: `Bearer ${fuel2Token}`
-            },
-            error: function() {
-                updateApiStatus("onlinecodes-api", false);
-            },
-            success: function(result){
-
-                if ( debug ) {
-                    console.log('lookup global codes executed');
-                    console.log(result.items);               
+    async function lookupGlobalCodes(fuel2Token) {
+        try {
+            // access offer types and build select input
+            let result = await $.ajax({
+                url: "/dataextension/lookup/globalcodes", 
+                headers: {
+                    Authorization: `Bearer ${fuel2Token}`
                 }
+            });
 
-                var i;
-                if ( result.items.length > 0 ) {
-                    for (i = 0; i < result.items.length; ++i) {
-                        if ( debug ) {
-                            console.log(result.items[i].keys.couponcode);
-                        }
-                        // do something with `substr[i]
-                        $("#global_code_1").append("<option data-attribute-validfrom='" + result.items[i].values.validfrom + "' data-attribute-validto='" + result.items[i].values.validto + "' value=" + encodeURI(result.items[i].keys.couponcode) + ">" + result.items[i].keys.couponcode + "</option>");
-                        $("#global_code_2").append("<option data-attribute-validfrom='" + result.items[i].values.validfrom + "' data-attribute-validto='" + result.items[i].values.validto + "' value=" + encodeURI(result.items[i].keys.couponcode) + ">" + result.items[i].keys.couponcode + "</option>");
-                        $("#global_code_3").append("<option data-attribute-validfrom='" + result.items[i].values.validfrom + "' data-attribute-validto='" + result.items[i].values.validto + "' value=" + encodeURI(result.items[i].keys.couponcode) + ">" + result.items[i].keys.couponcode + "</option>");
-                        $("#global_code_4").append("<option data-attribute-validfrom='" + result.items[i].values.validfrom + "' data-attribute-validto='" + result.items[i].values.validto + "' value=" + encodeURI(result.items[i].keys.couponcode) + ">" + result.items[i].keys.couponcode + "</option>");
-                        $("#global_code_5").append("<option data-attribute-validfrom='" + result.items[i].values.validfrom + "' data-attribute-validto='" + result.items[i].values.validto + "' value=" + encodeURI(result.items[i].keys.couponcode) + ">" + result.items[i].keys.couponcode + "</option>");
-                    }                    
-                }
-
-                updateApiStatus("onlinecodes-api", true);
+            if ( debug ) {
+                console.log('lookup global codes executed');
+                console.log(result.items);               
             }
-        });
+
+            var i;
+            if ( result.items.length > 0 ) {
+                for (i = 0; i < result.items.length; ++i) {
+                    if ( debug ) {
+                        console.log(result.items[i].keys.couponcode);
+                    }
+                    // do something with `substr[i]
+                    $("#global_code_1").append("<option data-attribute-validfrom='" + result.items[i].values.validfrom + "' data-attribute-validto='" + result.items[i].values.validto + "' value=" + encodeURI(result.items[i].keys.couponcode) + ">" + result.items[i].keys.couponcode + "</option>");
+                    $("#global_code_2").append("<option data-attribute-validfrom='" + result.items[i].values.validfrom + "' data-attribute-validto='" + result.items[i].values.validto + "' value=" + encodeURI(result.items[i].keys.couponcode) + ">" + result.items[i].keys.couponcode + "</option>");
+                    $("#global_code_3").append("<option data-attribute-validfrom='" + result.items[i].values.validfrom + "' data-attribute-validto='" + result.items[i].values.validto + "' value=" + encodeURI(result.items[i].keys.couponcode) + ">" + result.items[i].keys.couponcode + "</option>");
+                    $("#global_code_4").append("<option data-attribute-validfrom='" + result.items[i].values.validfrom + "' data-attribute-validto='" + result.items[i].values.validto + "' value=" + encodeURI(result.items[i].keys.couponcode) + ">" + result.items[i].keys.couponcode + "</option>");
+                    $("#global_code_5").append("<option data-attribute-validfrom='" + result.items[i].values.validfrom + "' data-attribute-validto='" + result.items[i].values.validto + "' value=" + encodeURI(result.items[i].keys.couponcode) + ">" + result.items[i].keys.couponcode + "</option>");
+                }                    
+            }
+
+            updateApiStatus("onlinecodes-api", true);
+        } catch (error) {
+            updateApiStatus("onlinecodes-api", false);
+        }
     }
 
     async function lookupPromos(fuel2Token) {
@@ -883,140 +881,125 @@ define([
         }
     }
 
-    function lookupTemplates(fuel2Token) {
+    async function lookupTemplates(fuel2Token) {
 
-        // access offer types and build select input
-        $.ajax({
+        try {
+            let templatesResult = await $.ajax({
+                url: "/dataextension/lookup/templates",
+                headers: {
+                    Authorization: `Bearer ${fuel2Token}`
+                }
+            });
 
-            url: "/dataextension/lookup/templates",
-            headers: {
-                Authorization: `Bearer ${fuel2Token}`
-            },
-            error: function() {
-                updateApiStatus("email-api", false);
-            }, 
-            success: function(result){
+            if ( debug ) {
+                console.log('lookup templates executed');
+                //console.log(result.items);               
+            }
 
+            var i;
+            for (i = 0; i < templatesResult.items.length; ++i) {
                 if ( debug ) {
-                    console.log('lookup templates executed');
-                    //console.log(result.items);               
+                    //console.log(result.items[i]);
                 }
+                // do something with substr[i]
+                $('#email_template option[value="loading"]').remove();
+                $("#email_template").append("<option value=" + encodeURI(templatesResult.items[i].name) + ">" + templatesResult.items[i].name + "</option>");
+            }
 
-                var i;
-                for (i = 0; i < result.items.length; ++i) {
-                    if ( debug ) {
-                        //console.log(result.items[i]);
-                    }
-                    // do something with substr[i]
-                    $('#email_template option[value="loading"]').remove();
-                    $("#email_template").append("<option value=" + encodeURI(result.items[i].name) + ">" + result.items[i].name + "</option>");
+            let campaignsResult = await $.ajax({
+                url: "/dataextension/lookup/campaigns",
+                headers: {
+                    Authorization: `Bearer ${fuel2Token}`
                 }
+            });
 
-                // access offer types and build select input
-                $.ajax({
+            if ( debug ) {
+                console.log('lookup campaigns executed');
+            }
 
-                    url: "/dataextension/lookup/campaigns",
-                    headers: {
-                        Authorization: `Bearer ${fuel2Token}`
-                    },
-                    error: function() {
-                        updateApiStatus("email-api", false);
-                    }, 
-                    success: function(result){
-
-                        if ( debug ) {
-                            console.log('lookup campaigns executed');
-                            //console.log(result.items);               
+            var i;
+            for (i = 0; i < campaignsResult.items.length; ++i) {
+                if ( debug ) {
+                    console.log("The keys for the campaign lookup is");
+                    console.log(campaignsResult.items[i].keys);
+                    console.log("And the email template we are on is");
+                    console.log(campaignsResult.items[i].values.email_template);
+                }
+                // do something with substr[i]
+                $("#email_template > option").each(function() {
+                    console.log("the select option is");
+                    console.log(decodeURI(this.value));
+                    if ( campaignsResult.items[i].values.sent_to_optima == "True" || campaignsResult.items[i].values.sent_to_optima == true ) {
+                        if ( decodeURI(this.value) == campaignsResult.items[i].values.email_template && this.value != "no-template" ) {
+                            $(this).remove();
                         }
-
-                        var i;
-                        for (i = 0; i < result.items.length; ++i) {
-                            if ( debug ) {
-                                console.log("The keys for the campaign lookup is");
-                                console.log(result.items[i].keys);
-                                console.log("And the email template we are on is");
-                                console.log(result.items[i].values.email_template);
-                            }
-                            // do something with substr[i]
-                            $("#email_template > option").each(function() {
-                                console.log("the select option is");
-                                console.log(decodeURI(this.value));
-                                if ( result.items[i].values.sent_to_optima == "True" || result.items[i].values.sent_to_optima == true ) {
-                                    if ( decodeURI(this.value) == result.items[i].values.email_template && this.value != "no-template" ) {
-                                        $(this).remove();
-                                    }
-                                }
-                            });
-                        }
-
-                        updateApiStatus("email-api", true);
                     }
                 });
             }
-        });
 
+            updateApiStatus("email-api", true);
+
+        } catch (error) {
+            updateApiStatus("email-api", false);
+        }
     }
 
-    function lookupControlGroups(fuel2Token) {
+    async function lookupControlGroups(fuel2Token) {
 
-        // access offer types and build select input
-        $.ajax({
-            url: "/dataextension/lookup/controlgroups",
-            headers: {
-                Authorization: `Bearer ${fuel2Token}`
-            },
-            error: function() {
-                updateApiStatus("controlgroup-api", false);
-            },  
-            success: function(result){
-
-                if ( debug ) {
-                    console.log('lookup control groups executed');
-                    console.log(result.items);               
+        try {
+            let result = await $.ajax({
+                url: "/dataextension/lookup/controlgroups",
+                headers: {
+                    Authorization: `Bearer ${fuel2Token}`
                 }
+            });
 
-                var i;
-                for (i = 0; i < result.items.length; ++i) {
-                    if ( debug ) {
-                        console.log(result.items[i]);
-                    }
-                    // do something with substr[i]
-                    $("#control_group").append("<option value=" + encodeURI(result.items[i].values.dataextensionname) + ">" + result.items[i].values.dataextensionname + "</option>");
-                }
-                updateApiStatus("controlgroup-api", true);
+            if ( debug ) {
+                console.log('lookup control groups executed');
+                console.log(result.items);               
             }
-        });
+
+            var i;
+            for (i = 0; i < result.items.length; ++i) {
+                if ( debug ) {
+                    console.log(result.items[i]);
+                }
+                // do something with substr[i]
+                $("#control_group").append("<option value=" + encodeURI(result.items[i].values.dataextensionname) + ">" + result.items[i].values.dataextensionname + "</option>");
+            }
+            updateApiStatus("controlgroup-api", true);
+        } catch (error) {
+            updateApiStatus("controlgroup-api", false);
+        }
     }
 
-    function lookupUpdateContacts(fuel2Token) {
+    async function lookupUpdateContacts(fuel2Token) {
 
-        // access offer types and build select input
-        $.ajax({
-            url: "/dataextension/lookup/updatecontacts",
-            headers: {
-                Authorization: `Bearer ${fuel2Token}`
-            },
-            error: function() {
-                updateApiStatus("updatecontacts-api", false);
-            },  
-            success: function(result){
-
-                if ( debug ) {
-                    console.log('lookup update contacts executed');
-                    console.log(result.items);               
+        try {
+            let result = await $.ajax({
+                url: "/dataextension/lookup/updatecontacts",
+                headers: {
+                    Authorization: `Bearer ${fuel2Token}`
                 }
+            });
 
-                var i;
-                for (i = 0; i < result.items.length; ++i) {
-                    if ( debug ) {
-                        console.log(result.items[i]);
-                    }
-                    // do something with substr[i]
-                    $("#update_contacts").append("<option value=" + encodeURI(result.items[i].values.dataextensionname) + ">" + result.items[i].values.dataextensionname + "</option>");
-                }
-                updateApiStatus("updatecontact-api", true);
+            if ( debug ) {
+                console.log('lookup update contacts executed');
+                console.log(result.items);               
             }
-        });
+
+            var i;
+            for (i = 0; i < result.items.length; ++i) {
+                if ( debug ) {
+                    console.log(result.items[i]);
+                }
+                // do something with substr[i]
+                $("#update_contacts").append("<option value=" + encodeURI(result.items[i].values.dataextensionname) + ">" + result.items[i].values.dataextensionname + "</option>");
+            }
+            updateApiStatus("updatecontact-api", true);
+        } catch (error) {
+            updateApiStatus("updatecontacts-api", false);
+        }
     }
 
     async function lookupVoucherPots(fuel2Token) {
