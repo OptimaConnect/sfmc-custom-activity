@@ -500,52 +500,48 @@ define([
             console.log(argumentsSummaryPayload);
         }
 
-        setTimeout(function(){ 
+        var q;
 
-            var q;
+        for (q = 0; q < argumentsSummaryPayload.length; q++) {
+            if (debug) {
+                console.log("Prepop: " + argumentsSummaryPayload[q].key + ", with value: " + argumentsSummaryPayload[q].value + ", and type: " + argumentsSummaryPayload[q].type);
+            }
 
-            for ( q = 0; q < argumentsSummaryPayload.length; q++ ) {
-                if ( debug ) {
-                    console.log("Prepop: " + argumentsSummaryPayload[q].key + ", with value: " + argumentsSummaryPayload[q].value + ", and type: " + argumentsSummaryPayload[q].type);
+            if (argumentsSummaryPayload[q].type == "checkbox") {
+
+                if (argumentsSummaryPayload[q].value) {
+                    $("#" + argumentsSummaryPayload[q].key).val(true);
+                    $("#" + argumentsSummaryPayload[q].key).prop('checked', "checked");
                 }
 
-                if ( argumentsSummaryPayload[q].type == "checkbox") {
-
-                    if ( argumentsSummaryPayload[q].value ) {
-                        $("#" + argumentsSummaryPayload[q].key).val(true);
-                        $("#" + argumentsSummaryPayload[q].key).prop('checked', "checked");
+            } else if (argumentsSummaryPayload[q].type == "radio") {
+                if (argumentsSummaryPayload[q].key == "promotionType") {
+                    if (argumentsSummaryPayload[q].value == "online") {
+                        $("#radio-1").prop('checked', true);
+                        $("#radio-1").click();
+                    } else if (argumentsSummaryPayload[q].value == "instore") {
+                        $("#radio-2").prop('checked', true);
+                        $("#radio-2").click();
+                    } else if (argumentsSummaryPayload[q].value == "online_instore") {
+                        $("#radio-3").prop('checked', true);
+                        $("#radio-3").click();
+                    } else if (argumentsSummaryPayload[q].value == "nocode") {
+                        $("#radio-4").prop('checked', true);
+                        $("#radio-4").click();
                     }
-                    
-                } else if ( argumentsSummaryPayload[q].type == "radio") {
-                    if ( argumentsSummaryPayload[q].key == "promotionType") {
-                        if ( argumentsSummaryPayload[q].value == "online") {
-                            $("#radio-1").prop('checked', true);
-                            $("#radio-1").click();
-                        } else if ( argumentsSummaryPayload[q].value == "instore") {
-                            $("#radio-2").prop('checked', true);
-                            $("#radio-2").click();
-                        } else if ( argumentsSummaryPayload[q].value == "online_instore") {
-                            $("#radio-3").prop('checked', true);
-                            $("#radio-3").click();
-                        } else if ( argumentsSummaryPayload[q].value == "nocode") {
-                            $("#radio-4").prop('checked', true);
-                            $("#radio-4").click();
-                        }
-                    } else if ( argumentsSummaryPayload[q].key == "onlinePromotionType") {
-                        if ( argumentsSummaryPayload[q].value == "global" ) {
-                            $("#radio-5").prop('checked', true);
-                            $("#radio-5").click();
-                        } else if ( argumentsSummaryPayload[q].value == "unique") {
-                            $("#radio-6").prop('checked', true);
-                            $("#radio-6").click();
-                        }
+                } else if (argumentsSummaryPayload[q].key == "onlinePromotionType") {
+                    if (argumentsSummaryPayload[q].value == "global") {
+                        $("#radio-5").prop('checked', true);
+                        $("#radio-5").click();
+                    } else if (argumentsSummaryPayload[q].value == "unique") {
+                        $("#radio-6").prop('checked', true);
+                        $("#radio-6").click();
                     }
                 }
+            }
 
-                $("#step" + (argumentsSummaryPayload[q].step - 1) + " #" + argumentsSummaryPayload[q].key).val(argumentsSummaryPayload[q].value);
-
-            } 
-        }, 2000);
+            $("#step" + (argumentsSummaryPayload[q].step - 1) + " #" + argumentsSummaryPayload[q].key).val(argumentsSummaryPayload[q].value);
+        }
     }
 
     function triggerSteps(argumentsSummaryPayload, argPromotionType) {
@@ -866,14 +862,11 @@ define([
                     console.log(result.items[i].keys);
                 }
 
-                if ( result.items[i].values.priceeventreasoncode != 'Event Reason Code' ) {
-                    // do something with `substr[i]
-                    $("#instore_code_1").append(`<option data-attribute-loyalty=${result.items[i].values.bispromotionheader} data-attribute-validfrom=${result.items[i].values.datefrom} data-attribute-validto=${result.items[i].values.dateto} data-attribute-discountid=${result.items[i].keys.discountid} value=${encodeURI(result.items[i].values.discountmediaid)}>${result.items[i].keys.discountid} - ${result.items[i].values.name}</option>`);
-                    $("#instore_code_2").append(`<option data-attribute-loyalty=${result.items[i].values.bispromotionheader} data-attribute-validfrom=${result.items[i].values.datefrom} data-attribute-validto=${result.items[i].values.dateto} data-attribute-discountid=${result.items[i].keys.discountid} value=${encodeURI(result.items[i].values.discountmediaid)}>${result.items[i].keys.discountid} - ${result.items[i].values.name}</option>`);
-                    $("#instore_code_3").append(`<option data-attribute-loyalty=${result.items[i].values.bispromotionheader} data-attribute-validfrom=${result.items[i].values.datefrom} data-attribute-validto=${result.items[i].values.dateto} data-attribute-discountid=${result.items[i].keys.discountid} value=${encodeURI(result.items[i].values.discountmediaid)}>${result.items[i].keys.discountid} - ${result.items[i].values.name}</option>`);
-                    $("#instore_code_4").append(`<option data-attribute-loyalty=${result.items[i].values.bispromotionheader} data-attribute-validfrom=${result.items[i].values.datefrom} data-attribute-validto=${result.items[i].values.dateto} data-attribute-discountid=${result.items[i].keys.discountid} value=${encodeURI(result.items[i].values.discountmediaid)}>${result.items[i].keys.discountid} - ${result.items[i].values.name}</option>`);
-                    $("#instore_code_5").append(`<option data-attribute-loyalty=${result.items[i].values.bispromotionheader} data-attribute-validfrom=${result.items[i].values.datefrom} data-attribute-validto=${result.items[i].values.dateto} data-attribute-discountid=${result.items[i].keys.discountid} value=${encodeURI(result.items[i].values.discountmediaid)}>${result.items[i].keys.discountid} - ${result.items[i].values.name}</option>`);
-                }
+                $("#instore_code_1").append(`<option data-attribute-loyalty=${result.items[i].values.bispromotionheader} data-attribute-validfrom=${result.items[i].values.datefrom} data-attribute-validto=${result.items[i].values.dateto} data-attribute-discountid=${result.items[i].keys.discountid} value=${encodeURI(result.items[i].values.discountmediaid)}>${result.items[i].keys.discountid} - ${result.items[i].values.name}</option>`);
+                $("#instore_code_2").append(`<option data-attribute-loyalty=${result.items[i].values.bispromotionheader} data-attribute-validfrom=${result.items[i].values.datefrom} data-attribute-validto=${result.items[i].values.dateto} data-attribute-discountid=${result.items[i].keys.discountid} value=${encodeURI(result.items[i].values.discountmediaid)}>${result.items[i].keys.discountid} - ${result.items[i].values.name}</option>`);
+                $("#instore_code_3").append(`<option data-attribute-loyalty=${result.items[i].values.bispromotionheader} data-attribute-validfrom=${result.items[i].values.datefrom} data-attribute-validto=${result.items[i].values.dateto} data-attribute-discountid=${result.items[i].keys.discountid} value=${encodeURI(result.items[i].values.discountmediaid)}>${result.items[i].keys.discountid} - ${result.items[i].values.name}</option>`);
+                $("#instore_code_4").append(`<option data-attribute-loyalty=${result.items[i].values.bispromotionheader} data-attribute-validfrom=${result.items[i].values.datefrom} data-attribute-validto=${result.items[i].values.dateto} data-attribute-discountid=${result.items[i].keys.discountid} value=${encodeURI(result.items[i].values.discountmediaid)}>${result.items[i].keys.discountid} - ${result.items[i].values.name}</option>`);
+                $("#instore_code_5").append(`<option data-attribute-loyalty=${result.items[i].values.bispromotionheader} data-attribute-validfrom=${result.items[i].values.datefrom} data-attribute-validto=${result.items[i].values.dateto} data-attribute-discountid=${result.items[i].keys.discountid} value=${encodeURI(result.items[i].values.discountmediaid)}>${result.items[i].keys.discountid} - ${result.items[i].values.name}</option>`);
             }
             updateApiStatus("instorecodes-api", true);
         } catch (error) {
