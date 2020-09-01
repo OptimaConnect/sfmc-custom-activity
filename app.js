@@ -532,7 +532,7 @@ function buildAssociationPayload(payload, incrementData, numberOfCodes) {
 }
 
 function formatDatetime(datestring) {
-	const expectedDateFormats = ["DD/MM/YYYY", "MMM DD YYYY hh:mm A", "MM/DD/YYYY hh:mm:ss A", moment.ISO_8601];
+	const expectedDateFormats = ["DD/MM/YYYY", "MMM DD YYYY hh:mm A", "MMM  DD YYYY hh:mm A", "MM/DD/YYYY hh:mm:ss A", moment.ISO_8601];
 	const date = moment(datestring, expectedDateFormats);
 
 	if (!date.isValid()) {
