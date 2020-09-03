@@ -102,6 +102,14 @@ app.use(bodyParser.urlencoded({ extended: false }));
 
 app.use(bodyParser.json());
 
+app.post('/journeybuilder/save/', activity.save );
+app.post('/journeybuilder/validate/', activity.validate );
+app.post('/journeybuilder/publish/', activity.publish );
+app.post('/journeybuilder/execute/', activity.execute );
+app.post('/journeybuilder/stop/', activity.stop );
+app.post('/journeybuilder/unpublish/', activity.unpublish );
+
+
 // Express in Development Mode
 if ('development' == app.get('env')) {
 	app.use(errorhandler());
@@ -1265,13 +1273,6 @@ app.post('/dataextension/update-existing', async function (req, res){
 		console.dir(err);
 	}
 });
-
-app.post('/journeybuilder/save/', activity.save );
-app.post('/journeybuilder/validate/', activity.validate );
-app.post('/journeybuilder/publish/', activity.publish );
-app.post('/journeybuilder/execute/', activity.execute );
-app.post('/journeybuilder/stop/', activity.stop );
-app.post('/journeybuilder/unpublish/', activity.unpublish );
 
 // listening port
 http.createServer(app).listen(app.get('port'), function(req, res){
