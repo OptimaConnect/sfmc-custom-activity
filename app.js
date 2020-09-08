@@ -539,12 +539,17 @@ function buildAssociationPayload(payload, incrementData, numberOfCodes) {
 	return campaignPromotionAssociationData;
 }
 
-function formatDatetime(datestring) {
+function formatDatetime(datestring, endofday = false) {
 	const expectedDateFormats = ["DD/MM/YYYY", "MMM DD YYYY hh:mm A", "MMM  DD YYYY hh:mm A", "MM/DD/YYYY hh:mm:ss A", moment.ISO_8601];
 	const date = moment(datestring, expectedDateFormats);
 
 	if (!date.isValid()) {
 		throw new Error(`Invalid date string '${datestring}'`);
+	}
+
+	if (endofday) {
+		date.hour(23);
+		date.minute(59);
 	}
 
 	return date.format("YYYY-MM-DD HH:mm:ss");
@@ -625,9 +630,9 @@ function buildPromotionDescriptionPayload(payload, incrementData, numberOfCodes)
 					promotionDescriptionData.promotions[promotionArrayKey]["promotion_id"] 			= payload[`global_code_${onlineTicker}_promo_id`];
 					promotionDescriptionData.promotions[promotionArrayKey]["promotion_group_id"] 	= payload[`global_code_${onlineTicker}_promo_group_id`];
 					promotionDescriptionData.promotions[promotionArrayKey]["valid_from_datetime"] 	= formatDatetime(payload[`global_code_${onlineTicker}_valid_from`]);
-					promotionDescriptionData.promotions[promotionArrayKey]["valid_to_datetime"] 	= formatDatetime(payload[`global_code_${onlineTicker}_valid_to`]);
+					promotionDescriptionData.promotions[promotionArrayKey]["valid_to_datetime"] 	= formatDatetime(payload[`global_code_${onlineTicker}_valid_to`], true);
 					promotionDescriptionData.promotions[promotionArrayKey]["visiblefrom"] 			= formatDatetime(payload[`global_code_${onlineTicker}_valid_from`]);
-					promotionDescriptionData.promotions[promotionArrayKey]["visibleto"] 			= formatDatetime(payload[`global_code_${onlineTicker}_valid_to`]);
+					promotionDescriptionData.promotions[promotionArrayKey]["visibleto"] 			= formatDatetime(payload[`global_code_${onlineTicker}_valid_to`], true);
 				} else if (payload.onlinePromotionType == "unique" ) {
 					promotionDescriptionData.promotions[promotionArrayKey]["barcode"] 				= "-";
 					promotionDescriptionData.promotions[promotionArrayKey]["promotion_id"] 			= payload[`unique_code_${onlineTicker}_promo_id`];
@@ -650,9 +655,9 @@ function buildPromotionDescriptionPayload(payload, incrementData, numberOfCodes)
 				promotionDescriptionData.promotions[promotionArrayKey]["promotion_id"]					= payload[`instore_code_${instoreTicker}_promo_id`];
 				promotionDescriptionData.promotions[promotionArrayKey]["promotion_group_id"]			= payload[`instore_code_${instoreTicker}_promo_group_id`];
 				promotionDescriptionData.promotions[promotionArrayKey]["valid_from_datetime"] 			= formatDatetime(payload[`instore_code_${instoreTicker}_valid_from`]);
-				promotionDescriptionData.promotions[promotionArrayKey]["valid_to_datetime"] 			= formatDatetime(payload[`instore_code_${instoreTicker}_valid_to`]);
+				promotionDescriptionData.promotions[promotionArrayKey]["valid_to_datetime"] 			= formatDatetime(payload[`instore_code_${instoreTicker}_valid_to`], true);
 				promotionDescriptionData.promotions[promotionArrayKey]["visiblefrom"]					= formatDatetime(payload[`instore_code_${instoreTicker}_valid_from`]);
-				promotionDescriptionData.promotions[promotionArrayKey]["visibleto"] 					= formatDatetime(payload[`instore_code_${instoreTicker}_valid_to`]);
+				promotionDescriptionData.promotions[promotionArrayKey]["visibleto"] 					= formatDatetime(payload[`instore_code_${instoreTicker}_valid_to`], true);
 				promotionDescriptionData.promotions[promotionArrayKey]["number_of_redemptions_allowed"] = payload[`instore_code_${instoreTicker}_redemptions`];
 				promotionDescriptionData.promotions[promotionArrayKey]["print_at_till_flag"] 			= payload.print_at_till_instore;
 				promotionDescriptionData.promotions[promotionArrayKey]["instant_win_flag"] 				= payload.instant_win_instore;
