@@ -8,14 +8,15 @@ var bodyParser  		= require('body-parser');
 var errorhandler 		= require('errorhandler');
 var http        		= require('http');
 var path        		= require('path');
-var moment 				= require('moment');
+const moment 			= require('moment-timezone');
 var request     		= require('request');
 var routes      		= require('./routes');
 var activity    		= require('./routes/activity');
 var urlencodedparser 	= bodyParser.urlencoded({extended:false});
 var app 				= express();
 var local       		= false;
-const journeyTokenHandler = require("./journeytokenhandler.js");
+const tokenHandler 		= require("./tokenHandler");
+const incrementHandler 	= require("./incrementHandler");
 
 // access Heroku variables
 if ( !local ) {
@@ -53,7 +54,6 @@ const descriptionUrl 			= marketingCloud.restUrl + "hub/v1/dataevents/key:" 		+ 
 const communicationCellUrl 		= marketingCloud.restUrl + "hub/v1/dataevents/key:" 		+ marketingCloud.communicationCellDataExtension 	+ "/rowset";
 const updateIncrementsUrl 		= marketingCloud.restUrl + "hub/v1/dataevents/key:" 		+ marketingCloud.promotionIncrementExtension 		+ "/rowset";
 const templatesUrl 				= marketingCloud.restUrl + "asset/v1/content/assets/query";
-const contextUrl = marketingCloud.restUrl + "platform/v1/tokenContext";
 
 // json template payload
 const templatePayload = {
@@ -114,31 +114,11 @@ app.post('/journeybuilder/unpublish/', activity.unpublish );
 if ('development' == app.get('env')) {
 	app.use(errorhandler());
 } else {
-	app.use(journeyTokenHandler.validateToken);
+	app.use(tokenHandler.validateToken);
 }
 
-const getOauth2Token = () => new Promise((resolve, reject) => {
-	axios({
-		method: 'post',
-		url: marketingCloud.authUrl,
-		data:{
-			"grant_type": "client_credentials",
-			"client_id": marketingCloud.clientId,
-			"client_secret": marketingCloud.clientSecret
-		}
-	})
-	.then(function (oauthResponse) {
-		console.dir('Bearer '.concat(oauthResponse.data.access_token));
-		return resolve('Bearer '.concat(oauthResponse.data.access_token));
-	})
-	.catch(function (error) {
-		console.dir("Error getting Oauth Token");
-		return reject(error);
-	});
-});
-
 const getIncrements = () => new Promise((resolve, reject) => {
-	getOauth2Token().then((tokenResponse) => {
+	tokenHandler.getOauth2Token().then((tokenResponse) => {
 
 		axios.get(incrementsUrl, { 
 			headers: { 
@@ -181,7 +161,7 @@ const saveToDataExtension = (targetUrl, payload, key, dataType, keyName) => new 
 		
 		console.dir(insertPayload);
 
-		getOauth2Token().then((tokenResponse) => {
+		tokenHandler.getOauth2Token().then((tokenResponse) => {
 		   	axios({
 				method: 'post',
 				url: targetUrl,
@@ -214,7 +194,7 @@ const saveToDataExtension = (targetUrl, payload, key, dataType, keyName) => new 
     	}];
     	console.dir(insertPayload);
 
-		getOauth2Token().then((tokenResponse) => {
+		tokenHandler.getOauth2Token().then((tokenResponse) => {
 		   	axios({
 				method: 'post',
 				url: targetUrl,
@@ -246,7 +226,7 @@ const saveToDataExtension = (targetUrl, payload, key, dataType, keyName) => new 
 		console.dir("Promo desc data: ");
 		console.dir(insertPayload);
 
-		getOauth2Token().then((tokenResponse) => {
+		tokenHandler.getOauth2Token().then((tokenResponse) => {
 		   	axios({
 				method: 'post',
 				url: targetUrl,
@@ -301,7 +281,7 @@ const updateIncrements = (targetUrl, promotionObject, communicationCellObject, m
 		
 	console.dir(insertPayload);
 
-	getOauth2Token().then((tokenResponse) => {
+	tokenHandler.getOauth2Token().then((tokenResponse) => {
 	   	axios({
 			method: 'post',
 			url: targetUrl,
@@ -324,7 +304,7 @@ const updateIncrements = (targetUrl, promotionObject, communicationCellObject, m
 //Fetch increment values
 app.get("/dataextension/lookup/increments", (req, res, next) => {
 
-	getOauth2Token().then((tokenResponse) => {
+	tokenHandler.getOauth2Token().then((tokenResponse) => {
 
 		axios.get(incrementsUrl, { 
 			headers: { 
@@ -345,7 +325,7 @@ app.get("/dataextension/lookup/increments", (req, res, next) => {
 //Fetch rows from promotions data extension
 app.get("/dataextension/lookup/promotions", (req, res, next) => {
 
-	getOauth2Token().then((tokenResponse) => {
+	tokenHandler.getOauth2Token().then((tokenResponse) => {
 
 		axios.get(promotionsUrl, { 
 			headers: { 
@@ -366,7 +346,7 @@ app.get("/dataextension/lookup/promotions", (req, res, next) => {
 //Fetch rows from promotions data extension
 app.get("/dataextension/lookup/campaigns", (req, res, next) => {
 
-	getOauth2Token().then((tokenResponse) => {
+	tokenHandler.getOauth2Token().then((tokenResponse) => {
 
 		axios.get(getAllCampaigns, { 
 			headers: { 
@@ -387,7 +367,7 @@ app.get("/dataextension/lookup/campaigns", (req, res, next) => {
 //Fetch rows from promotions data extension
 app.get("/dataextension/lookup/globalcodes", (req, res, next) => {
 
-	getOauth2Token().then((tokenResponse) => {
+	tokenHandler.getOauth2Token().then((tokenResponse) => {
 
 		axios.get(globalCodesUrl, { 
 			headers: { 
@@ -408,7 +388,7 @@ app.get("/dataextension/lookup/globalcodes", (req, res, next) => {
 //Fetch rows from control group data extension
 app.get("/dataextension/lookup/controlgroups", (req, res, next) => {
 
-	getOauth2Token().then((tokenResponse) => {
+	tokenHandler.getOauth2Token().then((tokenResponse) => {
 
 		axios.get(controlGroupsUrl, { 
 			headers: { 
@@ -429,7 +409,7 @@ app.get("/dataextension/lookup/controlgroups", (req, res, next) => {
 //Fetch rows from update contacts data extension
 app.get("/dataextension/lookup/updatecontacts", (req, res, next) => {
 
-	getOauth2Token().then((tokenResponse) => {
+	tokenHandler.getOauth2Token().then((tokenResponse) => {
 
 		axios.get(updateContactsUrl, { 
 			headers: { 
@@ -450,7 +430,7 @@ app.get("/dataextension/lookup/updatecontacts", (req, res, next) => {
 //Fetch rows from voucher data extension
 app.get("/dataextension/lookup/voucherpots", (req, res, next) => {
 
-	getOauth2Token().then((tokenResponse) => {
+	tokenHandler.getOauth2Token().then((tokenResponse) => {
 
 		axios.get(voucherPotsUrl, { 
 			headers: { 
@@ -471,7 +451,7 @@ app.get("/dataextension/lookup/voucherpots", (req, res, next) => {
 //Fetch email templates
 app.get("/dataextension/lookup/templates", (req, res, next) => {
 
-	getOauth2Token().then((tokenResponse) => {
+	tokenHandler.getOauth2Token().then((tokenResponse) => {
 
 		axios({
 			method: 'post',
@@ -488,6 +468,54 @@ app.get("/dataextension/lookup/templates", (req, res, next) => {
 			return error;
 		});
 	})
+});
+//#endregion
+
+//#region control button endpoints
+// save and test
+app.post('/dataextension/save', async function (req, res){ 
+	
+	console.dir("Dump request body");
+	console.dir(req.body);
+
+	try {
+		// Need to fix dependencies
+		// const newIds = await incrementHandler.claimNewIds();
+		await saveToAllDataExtensions(req.body);
+		res.send(newIds.promotion_key.toString());
+	} catch(err) {
+		console.dir(err);
+	}
+});
+
+// go-live
+app.post('/dataextension/set-live', async function (req, res){
+	console.dir("Dump update request body");
+	console.dir(req.body);
+	console.dir("the update key is");
+	console.dir(req.body[0].key);
+
+	try {
+		const returnedUpdate = await setLive(req.body[0].key);
+		res.send(JSON.stringify(returnedUpdate));
+	} catch(err) {
+		console.dir(err);
+	}
+});
+
+// update
+app.post('/dataextension/update-existing', async function (req, res){ 
+	console.dir("Dump update request body");
+	console.dir(req.body);
+	console.dir("the update key is");
+	console.dir(req.body[0].value);
+
+	try {
+		await updateExistingPromotion(req.body[0].value, req.body);
+		res.send({"success": "true"});
+	} catch(err) {
+		console.dir(err);
+	}
 });
 //#endregion
 
@@ -723,7 +751,7 @@ function countCodes(payload) {
 	return countPayload;
 }
 
-async function buildAndSend(payload) {
+async function saveToAllDataExtensions(payload) {
 	try {
 		const numberOfCodes = countCodes(payload);
 		const incrementData = await getIncrements();
@@ -739,31 +767,6 @@ async function buildAndSend(payload) {
 		console.dir(err);
 	}
 }
-
-async function sendBackPayload(payload) {
-	try {
-		const getIncrementsForSendback = await getIncrements();
-		var sendBackPromotionKey = parseInt(getIncrementsForSendback.promotion_key) + 1;
-		await buildAndSend(payload);
-		return sendBackPromotionKey;
-	} catch(err) {
-		console.dir(err);
-	}
-
-}
-// insert data into data extension
-app.post('/dataextension/add', async function (req, res){ 
-	
-	console.dir("Dump request body");
-	console.dir(req.body);
-
-	try {
-		const returnedPayload = await sendBackPayload(req.body)
-		res.send(JSON.stringify(returnedPayload));
-	} catch(err) {
-		console.dir(err);
-	}
-});
 
 function getSfmcDatetimeNow() {
 	const sfmcNow = moment().tz("Etc/GMT+6");
@@ -782,7 +785,7 @@ async function setLive(existingKey) {
 	console.dir("The current DT stamp is");
 	console.dir(currentDateTimeStamp);
 
-	getOauth2Token().then((tokenResponse) => {
+	tokenHandler.getOauth2Token().then((tokenResponse) => {
 
 		console.dir("perform CPA lookup")
 		axios.get(lookupCampaigns, { 
@@ -815,7 +818,7 @@ async function setLive(existingKey) {
 						
 					console.dir(updatePromoPayload);
 
-					getOauth2Token().then((tokenResponse) => {
+					tokenHandler.getOauth2Token().then((tokenResponse) => {
 					   	axios({
 							method: 'post',
 							url: descriptionUrl,
@@ -849,7 +852,7 @@ async function setLive(existingKey) {
 				
 			console.dir(updateCommPayload);
 
-			getOauth2Token().then((tokenResponse) => {
+			tokenHandler.getOauth2Token().then((tokenResponse) => {
 			   	axios({
 					method: 'post',
 					url: communicationCellUrl,
@@ -878,7 +881,7 @@ async function setLive(existingKey) {
 				
 			console.dir(updateCommPayload);
 
-			getOauth2Token().then((tokenResponse) => {
+			tokenHandler.getOauth2Token().then((tokenResponse) => {
 			   	axios({
 					method: 'post',
 					url: communicationCellUrl,
@@ -907,7 +910,7 @@ async function setLive(existingKey) {
 				
 			console.dir(updateCpaPayload);
 
-			getOauth2Token().then((tokenResponse) => {
+			tokenHandler.getOauth2Token().then((tokenResponse) => {
 			   	axios({
 					method: 'post',
 					url: campaignAssociationUrl,
@@ -945,7 +948,7 @@ async function updateExistingPromotion(existingKey, payloadBody) {
 
 	var currentDateTimeStamp = getSfmcDatetimeNow();
 
-	getOauth2Token().then((tokenResponse) => {
+	tokenHandler.getOauth2Token().then((tokenResponse) => {
 
 		axios.get(lookupCampaigns, { 
 			headers: { 
@@ -990,7 +993,7 @@ async function updateExistingPromotion(existingKey, payloadBody) {
 								
 							console.dir(updatePromoPayload);
 
-							getOauth2Token().then((tokenResponse) => {
+							tokenHandler.getOauth2Token().then((tokenResponse) => {
 							   	axios({
 									method: 'post',
 									url: descriptionUrl,
@@ -1032,7 +1035,7 @@ async function updateExistingPromotion(existingKey, payloadBody) {
 								
 							console.dir(updatePromoPayload);
 
-							getOauth2Token().then((tokenResponse) => {
+							tokenHandler.getOauth2Token().then((tokenResponse) => {
 							   	axios({
 									method: 'post',
 									url: descriptionUrl,
@@ -1075,7 +1078,7 @@ async function updateExistingPromotion(existingKey, payloadBody) {
 							
 						console.dir(updatePromoPayload);
 
-						getOauth2Token().then((tokenResponse) => {
+						tokenHandler.getOauth2Token().then((tokenResponse) => {
 						   	axios({
 								method: 'post',
 								url: descriptionUrl,
@@ -1117,7 +1120,7 @@ async function updateExistingPromotion(existingKey, payloadBody) {
 				
 			console.dir(updateCommPayload);
 
-			getOauth2Token().then((tokenResponse) => {
+			tokenHandler.getOauth2Token().then((tokenResponse) => {
 			   	axios({
 					method: 'post',
 					url: communicationCellUrl,
@@ -1154,7 +1157,7 @@ async function updateExistingPromotion(existingKey, payloadBody) {
 				
 			console.dir(updateCommPayload);
 
-			getOauth2Token().then((tokenResponse) => {
+			tokenHandler.getOauth2Token().then((tokenResponse) => {
 			   	axios({
 					method: 'post',
 					url: communicationCellUrl,
@@ -1196,7 +1199,7 @@ async function updateExistingPromotion(existingKey, payloadBody) {
 				
 			console.dir(updateCpaPayload);
 
-			getOauth2Token().then((tokenResponse) => {
+			tokenHandler.getOauth2Token().then((tokenResponse) => {
 			   	axios({
 					method: 'post',
 					url: campaignAssociationUrl,
@@ -1223,36 +1226,6 @@ async function updateExistingPromotion(existingKey, payloadBody) {
 	})
 	
 }
-
-// insert data into data extension
-app.post('/dataextension/set-live', async function (req, res){
-	console.dir("Dump update request body");
-	console.dir(req.body);
-	console.dir("the update key is");
-	console.dir(req.body[0].key);
-
-	try {
-		const returnedUpdate = await setLive(req.body[0].key);
-		res.send(JSON.stringify(returnedUpdate));
-	} catch(err) {
-		console.dir(err);
-	}
-});
-
-// insert data into data extension
-app.post('/dataextension/update-existing', async function (req, res){ 
-	console.dir("Dump update request body");
-	console.dir(req.body);
-	console.dir("the update key is");
-	console.dir(req.body[0].value);
-
-	try {
-		const updateExistingPromotionStatus = await updateExistingPromotion(req.body[0].value, req.body);
-		res.send({"success": "true"});
-	} catch(err) {
-		console.dir(err);
-	}
-});
 
 // listening port
 http.createServer(app).listen(app.get('port'), function(req, res){

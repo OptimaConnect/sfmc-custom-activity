@@ -1419,7 +1419,7 @@ define([
 
         try {
             $.ajax({ 
-                url: '/dataextension/add',
+                url: '/dataextension/save',
                 headers: {
                     Authorization: `Bearer ${fuel2Token}`
                 },
