@@ -320,6 +320,7 @@ const updateIncrements = (targetUrl, promotionObject, communicationCellObject, m
 	
 });
 
+//#region lookup endpoints
 //Fetch increment values
 app.get("/dataextension/lookup/increments", (req, res, next) => {
 
@@ -488,6 +489,7 @@ app.get("/dataextension/lookup/templates", (req, res, next) => {
 		});
 	})
 });
+//#endregion
 
 function buildAssociationPayload(payload, incrementData, numberOfCodes) {
 	var campaignPromotionAssociationData = {};
@@ -723,11 +725,11 @@ function countCodes(payload) {
 
 async function buildAndSend(payload) {
 	try {
-		const numberOfCodes = await countCodes(payload);
+		const numberOfCodes = countCodes(payload);
 		const incrementData = await getIncrements();
-		const associationPayload = await buildAssociationPayload(payload, incrementData, numberOfCodes);
-		const communicationCellPayload = await buildCommunicationCellPayload(associationPayload);
-		const promotionDescriptionPayload = await buildPromotionDescriptionPayload(associationPayload, incrementData, numberOfCodes);
+		const associationPayload = buildAssociationPayload(payload, incrementData, numberOfCodes);
+		const communicationCellPayload = buildCommunicationCellPayload(associationPayload);
+		const promotionDescriptionPayload = buildPromotionDescriptionPayload(associationPayload, incrementData, numberOfCodes);
 		const promotionObject = await saveToDataExtension(campaignAssociationUrl, associationPayload, incrementData.promotion_key, "cpa", "promotion_key");
 		const communicationCellObject = await saveToDataExtension(communicationCellUrl, communicationCellPayload, incrementData.communication_cell_code_id_increment, "communication_cell", "communication_cell_id");
 		const mcUniquePromotionObject = await saveToDataExtension(descriptionUrl, promotionDescriptionPayload, incrementData.mc_unique_promotion_id_increment, "promotion_description", "mc_unique_promotion_id");
@@ -742,7 +744,7 @@ async function sendBackPayload(payload) {
 	try {
 		const getIncrementsForSendback = await getIncrements();
 		var sendBackPromotionKey = parseInt(getIncrementsForSendback.promotion_key) + 1;
-		const fullAssociationPayload = await buildAndSend(payload);
+		await buildAndSend(payload);
 		return sendBackPromotionKey;
 	} catch(err) {
 		console.dir(err);
@@ -763,36 +765,9 @@ app.post('/dataextension/add', async function (req, res){
 	}
 });
 
-function getDateString(dateOffSetted) {
-	let date_ob = new Date(dateOffSetted);
-	let date = ("0" + date_ob.getDate()).slice(-2);
-	let month = ("0" + (date_ob.getMonth() + 1)).slice(-2);
-	let year = date_ob.getFullYear();
-	let hours = date_ob.getHours();
-	let minutes = date_ob.getMinutes();
-    let seconds = date_ob.getSeconds();
-    if ( minutes < 10 ) {
-        minutes = "0" + minutes;
-    }
-    if ( seconds < 10 ) {
-        seconds = "0" + seconds;
-    }
-	
-	let dateString = year + "/" + month + "/" + date + " " + hours + ":" + minutes + ":" + seconds;	
-	return dateString;
-}
-
-function getDateAndOffSet() {
-    var dt = new Date();
-    //console.log(dt); // Gives Tue Mar 22 2016 09:30:00 GMT+0530 (IST)
-
-    dt.setTime(dt.getTime()+dt.getTimezoneOffset()*60*1000);
-    //console.log(dt); // Gives Tue Mar 22 2016 04:00:00 GMT+0530 (IST)
-
-    var offset = -360; //Timezone offset for EST in minutes.
-    var estDate = new Date(dt.getTime() + offset*60*1000);
-    console.log(estDate);
-    return estDate; 
+function getSfmcDatetimeNow() {
+	const sfmcNow = moment().tz("Etc/GMT+6");
+	return sfmcNow.format();
 }
 
 async function setLive(existingKey) {
@@ -803,7 +778,7 @@ async function setLive(existingKey) {
 	console.dir("Looking up CPA's URL");
 	console.dir(lookupCampaigns);
 
-	var currentDateTimeStamp = getDateString(getDateAndOffSet());
+	var currentDateTimeStamp = getSfmcDatetimeNow();
 	console.dir("The current DT stamp is");
 	console.dir(currentDateTimeStamp);
 
@@ -968,7 +943,7 @@ async function updateExistingPromotion(existingKey, payloadBody) {
 	var lookupCampaigns = getCampaignsUrl + "promotion_key%20eq%20'" + existingKey + "'"
 	console.dir(lookupCampaigns);
 
-	var currentDateTimeStamp = getDateString(getDateAndOffSet());
+	var currentDateTimeStamp = getSfmcDatetimeNow();
 
 	getOauth2Token().then((tokenResponse) => {
 
