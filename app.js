@@ -60,16 +60,16 @@ const templatePayload = {
     "page":
     {
         "page":1,
-        "pageSize":1000
+        "pageSize":100
     },
 
     "query":
     {
         "leftOperand":
         {
-            "property":"name",
-            "simpleOperator":"contains",
-            "value": marketingCloud.templateFilter
+            "property":"modifiedDate",
+            "simpleOperator":"greaterthan",
+            "value": "2020-09-01"
         },
         "logicalOperator":"AND",
         "rightOperand":
@@ -82,12 +82,13 @@ const templatePayload = {
 
     "sort":
     [
-        { "property":"name", "direction":"ASC" }
+        { "property":"ModifiedDate", "direction":"DESC" }
     ],
 
     "fields":
     [
-        "name"
+		"name",
+		"ModifiedDate"
     ]
 };
 
