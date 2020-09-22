@@ -3,6 +3,9 @@
 const axios = require('axios');
 
 const restUrl = process.env.restUrl;
+const authUrl = process.env.authUrl;
+const clientId = process.env.clientId;
+const clientSecret = process.env.clientSecret;
 
 exports.validateToken = async function (req, res, next) {
     const fuelAuth = req.headers.authorization;
@@ -29,4 +32,19 @@ exports.validateToken = async function (req, res, next) {
         res.locals.authenticated = false;
         res.sendStatus(403);
     }
+};
+
+exports.getOauth2Token = async function () {
+    const oauthResponse = await axios({
+        method: 'post',
+        url: authUrl,
+        data: {
+            "grant_type": "client_credentials",
+            "client_id": clientId,
+            "client_secret": clientSecret
+        }
+    });
+
+    console.dir('Bearer '.concat(oauthResponse.data.access_token));
+    return 'Bearer '.concat(oauthResponse.data.access_token);
 }
