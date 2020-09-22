@@ -47,7 +47,7 @@ const globalCodesUrl 			= marketingCloud.restUrl + "data/v1/customobjectdata/key
 const controlGroupsUrl 			= marketingCloud.restUrl + "data/v1/customobjectdata/key/" 	+ marketingCloud.controlGroupsDataExtension 		+ "/rowset";
 const updateContactsUrl 		= marketingCloud.restUrl + "data/v1/customobjectdata/key/" 	+ marketingCloud.updateContactsDataExtension 		+ "/rowset";
 const voucherPotsUrl 			= marketingCloud.restUrl + "data/v1/customobjectdata/key/" 	+ marketingCloud.voucherPotsDataExtension 			+ "/rowset";
-const getCampaignsUrl	 		= marketingCloud.restUrl + "data/v1/customobjectdata/key/" 	+ marketingCloud.insertDataExtension				+ "/rowset?$filter=";
+const getPromotionAssociation	 		= marketingCloud.restUrl + "data/v1/customobjectdata/key/" 	+ marketingCloud.insertDataExtension				+ "/rowset?$filter=";
 const getAllCampaigns	 		= marketingCloud.restUrl + "data/v1/customobjectdata/key/" 	+ marketingCloud.insertDataExtension				+ "/rowset";
 const campaignAssociationUrl 	= marketingCloud.restUrl + "hub/v1/dataevents/key:" 		+ marketingCloud.insertDataExtension 				+ "/rowset";
 const descriptionUrl 			= marketingCloud.restUrl + "hub/v1/dataevents/key:" 		+ marketingCloud.promotionDescriptionDataExtension 	+ "/rowset";
@@ -481,8 +481,8 @@ app.post('/dataextension/save', async function (req, res){
 	try {
 		// Need to fix dependencies
 		// const newIds = await incrementHandler.claimNewIds();
-		await saveToAllDataExtensions(req.body);
-		res.send(newIds.promotion_key.toString());
+		const newPromotionKey = await saveToAllDataExtensions(req.body);
+		res.send(newPromotionKey.toString());
 	} catch(err) {
 		console.dir(err);
 	}
@@ -638,9 +638,9 @@ function buildPromotionDescriptionPayload(payload, incrementData, numberOfCodes)
 	
 	promotionDescriptionData["promotions"] = {};
 
-	var totalCodesNeeded = numberOfCodes.instore_codes + numberOfCodes.online_codes;
+	var maxCodesNeeded = Math.max(numberOfCodes.instore_codes, numberOfCodes.online_codes);
 
-	for ( var i = 1; i <= totalCodesNeeded; i++ ) {
+	for ( var i = 1; i <= maxCodesNeeded; i++ ) {
 		var promotionArrayKey = `promotion_${ticker}`;
 
 		if ( payload.promotionType == "online" || payload.promotionType == "online_instore" ) {
@@ -661,8 +661,8 @@ function buildPromotionDescriptionPayload(payload, incrementData, numberOfCodes)
 					promotionDescriptionData.promotions[promotionArrayKey]["promotion_group_id"] 	= payload[`global_code_${onlineTicker}_promo_group_id`];
 					promotionDescriptionData.promotions[promotionArrayKey]["valid_from_datetime"] 	= formatDatetime(payload[`global_code_${onlineTicker}_valid_from`]);
 					promotionDescriptionData.promotions[promotionArrayKey]["valid_to_datetime"] 	= formatDatetime(payload[`global_code_${onlineTicker}_valid_to`], true);
-					promotionDescriptionData.promotions[promotionArrayKey]["visiblefrom"] 			= formatDatetime(payload[`global_code_${onlineTicker}_valid_from`]);
-					promotionDescriptionData.promotions[promotionArrayKey]["visibleto"] 			= formatDatetime(payload[`global_code_${onlineTicker}_valid_to`], true);
+					promotionDescriptionData.promotions[promotionArrayKey]["visible_from_datetime"] = formatDatetime(payload[`global_code_${onlineTicker}_valid_from`]);
+					promotionDescriptionData.promotions[promotionArrayKey]["visible_to_datetime"] 	= formatDatetime(payload[`global_code_${onlineTicker}_valid_to`], true);
 				} else if (payload.onlinePromotionType == "unique" ) {
 					promotionDescriptionData.promotions[promotionArrayKey]["barcode"] 				= "-";
 					promotionDescriptionData.promotions[promotionArrayKey]["promotion_id"] 			= payload[`unique_code_${onlineTicker}_promo_id`];
@@ -686,8 +686,8 @@ function buildPromotionDescriptionPayload(payload, incrementData, numberOfCodes)
 				promotionDescriptionData.promotions[promotionArrayKey]["promotion_group_id"]			= payload[`instore_code_${instoreTicker}_promo_group_id`];
 				promotionDescriptionData.promotions[promotionArrayKey]["valid_from_datetime"] 			= formatDatetime(payload[`instore_code_${instoreTicker}_valid_from`]);
 				promotionDescriptionData.promotions[promotionArrayKey]["valid_to_datetime"] 			= formatDatetime(payload[`instore_code_${instoreTicker}_valid_to`], true);
-				promotionDescriptionData.promotions[promotionArrayKey]["visiblefrom"]					= formatDatetime(payload[`instore_code_${instoreTicker}_valid_from`]);
-				promotionDescriptionData.promotions[promotionArrayKey]["visibleto"] 					= formatDatetime(payload[`instore_code_${instoreTicker}_valid_to`], true);
+				promotionDescriptionData.promotions[promotionArrayKey]["visible_from_datetime"]			= formatDatetime(payload[`instore_code_${instoreTicker}_valid_from`]);
+				promotionDescriptionData.promotions[promotionArrayKey]["visible_to_datetime"] 			= formatDatetime(payload[`instore_code_${instoreTicker}_valid_to`], true);
 				promotionDescriptionData.promotions[promotionArrayKey]["number_of_redemptions_allowed"] = payload[`instore_code_${instoreTicker}_redemptions`];
 				promotionDescriptionData.promotions[promotionArrayKey]["print_at_till_flag"] 			= payload.print_at_till_instore;
 				promotionDescriptionData.promotions[promotionArrayKey]["instant_win_flag"] 				= payload.instant_win_instore;
@@ -762,7 +762,7 @@ async function saveToAllDataExtensions(payload) {
 		const communicationCellObject = await saveToDataExtension(communicationCellUrl, communicationCellPayload, incrementData.communication_cell_code_id_increment, "communication_cell", "communication_cell_id");
 		const mcUniquePromotionObject = await saveToDataExtension(descriptionUrl, promotionDescriptionPayload, incrementData.mc_unique_promotion_id_increment, "promotion_description", "mc_unique_promotion_id");
 		await updateIncrements(updateIncrementsUrl, promotionObject, communicationCellObject, mcUniquePromotionObject, numberOfCodes);
-		return associationPayload;
+		return parseInt(incrementData.promotion_key) + 1;
 	} catch(err) {
 		console.dir(err);
 	}
@@ -777,7 +777,7 @@ async function setLive(existingKey) {
 
 	console.dir("set live key is");
 	console.dir(existingKey);
-	var lookupCampaigns = getCampaignsUrl + "promotion_key%20eq%20'" + existingKey + "'";
+	var lookupCampaigns = getPromotionAssociation + "promotion_key%20eq%20'" + existingKey + "'";
 	console.dir("Looking up CPA's URL");
 	console.dir(lookupCampaigns);
 
@@ -938,293 +938,213 @@ async function setLive(existingKey) {
 	
 }
 
+/**
+ * @param {number} existingKey 
+ * @param {any[]} payloadBody 
+ */
 async function updateExistingPromotion(existingKey, payloadBody) {
 
 	console.dir("Payload Body for update is");
-	console.dir(payloadBody[0]);
+	console.dir(payloadBody);
 
-	var lookupCampaigns = getCampaignsUrl + "promotion_key%20eq%20'" + existingKey + "'"
-	console.dir(lookupCampaigns);
+	const cleansedPayload =  payloadBody.reduce((output, item) => {
+		if (item.key.includes("_valid_from")) {
+			output[item.key] = formatDatetime(item.value);
+		} else if (item.key.includes("_valid_to")) {
+			output[item.key] = formatDatetime(item.value, true);
+		} else {
+			output[item.key] = item.value;
+		}
+		return output;
+	}, {});
 
-	var currentDateTimeStamp = getSfmcDatetimeNow();
+	var lookupPromotionAssociation = getPromotionAssociation + "promotion_key%20eq%20'" + existingKey + "'"
+	console.dir(lookupPromotionAssociation);
 
-	tokenHandler.getOauth2Token().then((tokenResponse) => {
+	const currentDateTimeStamp = getSfmcDatetimeNow();
+	const token = await tokenHandler.getOauth2Token();
+	const response = await axios.get(lookupPromotionAssociation, {
+		headers: {
+			Authorization: token
+		}
+	});
 
-		axios.get(lookupCampaigns, { 
-			headers: { 
-				Authorization: tokenResponse
-			}
-		})
-		.then(response => {
-			// If request is good... 
-			//res.json(response.data);
-			console.dir(response.data.items[0].keys);
-			console.dir(response.data.items[0].values);
+	console.dir(response.data.items[0].keys);
+	console.dir(response.data.items[0].values);
 
-			for ( var v = 1; v <= 10; v++ ) {
-				if ( response.data.items[0].values["mc_id_" + v] =! "-" ) {
+	const existingCpaRow = response.data.items[0].values;
 
-					if ( v >= 1 && v <= 5 ) {
-
-						// these are online codes
-
-						if ( payloadBody[0].onlinePromotionType == "global" ) {
-
-							// update each promo desc
-							var updatePromoPayload = [{
-						        "keys": {
-						            "MC_UNIQUE_PROMOTION_ID": response.data.items[0].values["mc_id_" + v]
-						        },
-						        "values": {
-						        	"SENT": false,
-						        	"DATE_ADDED": currentDateTimeStamp,
-						        	"PROMOTION_ID": payloadBody[0]["global_code_" + v + "_promo_id"],
-						        	"PROMOTION_GROUP_ID": payloadBody[0]["global_code_" + v + "_promo_group_id"],
-						        	"PRINT_AT_TILL": payloadBody[0]["print_at_till_online"],
-						        	"INSTANT_WIN": payloadBody[0]["instant_win_online"],
-						        	"VALID_FROM_DATETIME": payloadBody[0]["global_code_1_valid_from"],
-						        	"VALID_TO_DATETIME": payloadBody[0]["global_code_" + v + "_valid_to"],
-						        	"VISIBLE_FROM_DATETIME": payloadBody[0]["global_code_1_valid_from"],
-						        	"VISIBLE_TO_DATETIME": payloadBody[0]["global_code_" + v + "_valid_to"],
-						        	"OFFER_DESCRIPTION": payloadBody[0]["campaign_name"],
-						        	"OFFER_CHANNEL": payloadBody[0]["offer_medium_online"]
-						        }
-							}];
-								
-							console.dir(updatePromoPayload);
-
-							tokenHandler.getOauth2Token().then((tokenResponse) => {
-							   	axios({
-									method: 'post',
-									url: descriptionUrl,
-									headers: {'Authorization': tokenResponse},
-									data: updatePromoPayload
-								})
-								.then(function (response) {
-									console.dir(response.data);
-									//return resolve(response.data);
-								})
-								.catch(function (error) {
-									console.dir(error);
-									//return reject(error);
-								});
-							})	
-
-						} else if ( payloadBody[0].onlinePromotionType == "unique" ) {
-
-							// update each promo desc
-							var updatePromoPayload = [{
-						        "keys": {
-						            "MC_UNIQUE_PROMOTION_ID": response.data.items[0].values["mc_id_" + v]
-						        },
-						        "values": {
-						        	"SENT": false,
-						        	"DATE_ADDED": currentDateTimeStamp,
-						        	"PROMOTION_ID": payloadBody[0]["unique_code_" + v + "_promo_id"],
-						        	"PROMOTION_GROUP_ID": payloadBody[0]["unique_code_" + v + "_promo_group_id"],
-						        	"PRINT_AT_TILL": payloadBody[0]["print_at_till_online"],
-						        	"INSTANT_WIN": payloadBody[0]["instant_win_online"],
-						        	"VALID_FROM_DATETIME": payloadBody[0]["unique_code_1_valid_from"],
-						        	"VALID_TO_DATETIME": payloadBody[0]["unique_code_" + v + "_valid_to"],
-						        	"VISIBLE_FROM_DATETIME": payloadBody[0]["unique_code_1_valid_from"],
-						        	"VISIBLE_TO_DATETIME": payloadBody[0]["unique_code_" + v + "_valid_to"],
-						        	"OFFER_DESCRIPTION": payloadBody[0]["campaign_name"],
-						        	"OFFER_CHANNEL": payloadBody[0]["offer_medium_online"]
-						        }
-							}];
-								
-							console.dir(updatePromoPayload);
-
-							tokenHandler.getOauth2Token().then((tokenResponse) => {
-							   	axios({
-									method: 'post',
-									url: descriptionUrl,
-									headers: {'Authorization': tokenResponse},
-									data: updatePromoPayload
-								})
-								.then(function (response) {
-									console.dir(response.data);
-									//return resolve(response.data);
-								})
-								.catch(function (error) {
-									console.dir(error);
-									//return reject(error);
-								});
-							})
-						}	
-
-					} else if ( v >= 6 && v <= 10 ) {
-
-						// update each promo desc
-						var updatePromoPayload = [{
-					        "keys": {
-					            "MC_UNIQUE_PROMOTION_ID": response.data.items[0].values["mc_id_" + v]
-					        },
-					        "values": {
-					        	"SENT": false,
-					        	"DATE_ADDED": currentDateTimeStamp,
-					        	"PROMOTION_ID": payloadBody[0]["instore_code_" + v + "_promo_id"],
-					        	"PROMOTION_GROUP_ID": payloadBody[0]["instore_code_" + v + "_promo_group_id"],
-					        	"PRINT_AT_TILL": payloadBody[0]["print_at_till_instore"],
-					        	"INSTANT_WIN": payloadBody[0]["instant_win_instore"],
-					        	"VALID_FROM_DATETIME": payloadBody[0]["instore_code_1_valid_from"],
-					        	"VALID_TO_DATETIME": payloadBody[0]["instore_code_" + v + "_valid_to"],
-					        	"VISIBLE_FROM_DATETIME": payloadBody[0]["instore_code_1_valid_from"],
-					        	"VISIBLE_TO_DATETIME": payloadBody[0]["instore_code_" + v + "_valid_to"],
-					        	"OFFER_DESCRIPTION": payloadBody[0]["campaign_name"],
-					        	"OFFER_CHANNEL": payloadBody[0]["offer_medium_instore"]
-					        }
-						}];
-							
-						console.dir(updatePromoPayload);
-
-						tokenHandler.getOauth2Token().then((tokenResponse) => {
-						   	axios({
-								method: 'post',
-								url: descriptionUrl,
-								headers: {'Authorization': tokenResponse},
-								data: updatePromoPayload
-							})
-							.then(function (response) {
-								console.dir(response.data);
-								//return resolve(response.data);
-							})
-							.catch(function (error) {
-								console.dir(error);
-								//return reject(error);
-							});
-						})	
-
+	let updatePromotionDescriptionPayload = [];
+	for (var v = 1; v <= 10; v++) {
+		if (existingCpaRow["mc_id_" + v] != "-") {
+			if (v >= 1 && v <= 5) {
+				if (cleansedPayload.onlinePromotionType == "global") {
+					// global online codes
+					updatePromotionDescriptionPayload.push({
+						"keys": {
+							"MC_UNIQUE_PROMOTION_ID": existingCpaRow[`mc_id_${v}`]
+						},
+						"values": {
+							"SENT": false,
+							"DATE_ADDED": currentDateTimeStamp,
+							"PROMOTION_ID": cleansedPayload[`global_code_${v}_promo_id`],
+							"PROMOTION_GROUP_ID": cleansedPayload[`global_code_${v}_promo_group_id`],
+							"PRINT_AT_TILL": cleansedPayload["print_at_till_online"],
+							"INSTANT_WIN": cleansedPayload["instant_win_online"],
+							"VALID_FROM_DATETIME": cleansedPayload[`global_code_${v}_valid_from`],
+							"VALID_TO_DATETIME": cleansedPayload[`global_code_${v}_valid_to`],
+							"VISIBLE_FROM_DATETIME": cleansedPayload[`global_code_${v}_valid_from`],
+							"VISIBLE_TO_DATETIME": cleansedPayload[`global_code_${v}_valid_to`],
+							"OFFER_DESCRIPTION": cleansedPayload["campaign_name"],
+							"OFFER_CHANNEL": cleansedPayload["offer_medium_online"]
+						}
+					});
+				} else if (cleansedPayload.onlinePromotionType == "unique") {
+					// unique online codes
+					updatePromotionDescriptionPayload.push({
+						"keys": {
+							"MC_UNIQUE_PROMOTION_ID": existingCpaRow[`mc_id_${v}`]
+						},
+						"values": {
+							"SENT": false,
+							"DATE_ADDED": currentDateTimeStamp,
+							"PROMOTION_ID": cleansedPayload[`unique_code_${v}_promo_id`],
+							"PROMOTION_GROUP_ID": cleansedPayload[`unique_code_${v}_promo_group_id`],
+							"PRINT_AT_TILL": cleansedPayload["print_at_till_online"],
+							"INSTANT_WIN": cleansedPayload["instant_win_online"],
+							"VALID_FROM_DATETIME": cleansedPayload[`unique_code_${v}_valid_from`],
+							"VALID_TO_DATETIME": cleansedPayload[`unique_code_${v}_valid_to`],
+							"VISIBLE_FROM_DATETIME": cleansedPayload[`unique_code_${v}_valid_from`],
+							"VISIBLE_TO_DATETIME": cleansedPayload[`unique_code_${v}_valid_to`],
+							"OFFER_DESCRIPTION": cleansedPayload["campaign_name"],
+							"OFFER_CHANNEL": cleansedPayload["offer_medium_online"]
+						}
+					});
+				}
+			} else if (v >= 6 && v <= 10) {
+				// instore codes
+				const instoreCodeNum = v - 5;
+				updatePromotionDescriptionPayload.push({
+					"keys": {
+						"MC_UNIQUE_PROMOTION_ID": existingCpaRow[`mc_id_${v}`]
+					},
+					"values": {
+						"SENT": false,
+						"DATE_ADDED": currentDateTimeStamp,
+						"PROMOTION_ID": cleansedPayload[`instore_code_${instoreCodeNum}_promo_id`],
+						"PROMOTION_GROUP_ID": cleansedPayload[`instore_code_${instoreCodeNum}_promo_group_id`],
+						"PRINT_AT_TILL": cleansedPayload["print_at_till_instore"],
+						"INSTANT_WIN": cleansedPayload["instant_win_instore"],
+						"VALID_FROM_DATETIME": cleansedPayload[`instore_code_${instoreCodeNum}_valid_from`],
+						"VALID_TO_DATETIME": cleansedPayload[`instore_code_${instoreCodeNum}_valid_to`],
+						"VISIBLE_FROM_DATETIME": cleansedPayload[`instore_code_${instoreCodeNum}_valid_from`],
+						"VISIBLE_TO_DATETIME": cleansedPayload[`instore_code_${instoreCodeNum}_valid_to`],
+						"OFFER_DESCRIPTION": cleansedPayload["campaign_name"],
+						"OFFER_CHANNEL": cleansedPayload["offer_medium_instore"]
 					}
-
-				}
+				});
 			}
+		}
+	}
 
-			var updateCommPayload = [{
-		        "keys": {
-		            "COMMUNICATION_CELL_ID": response.data.items[0].values.communication_cell_id
-		        },
-		        "values": {
-		        	"SENT": false,
-		        	"BASE_CONTACT_DATE": currentDateTimeStamp,
-			    	"cell_code"					: payloadBody[0]["cell_code"],
-			    	"cell_name"					: payloadBody[0]["cell_name"],
-			        "campaign_name"				: payloadBody[0]["campaign_name"],
-			        "campaign_id"				: payloadBody[0]["campaign_id"],
-			        "campaign_code"				: payloadBody[0]["campaign_code"],
-			        "cell_type"					: "1",
-			        "channel"					: "2",
-			        "is_putput_flag"			: "1"	
-		        }
-			}];
-				
-			console.dir(updateCommPayload);
+	console.dir(updatePromotionDescriptionPayload);
 
-			tokenHandler.getOauth2Token().then((tokenResponse) => {
-			   	axios({
-					method: 'post',
-					url: communicationCellUrl,
-					headers: {'Authorization': tokenResponse},
-					data: updateCommPayload
-				})
-				.then(function (response) {
-					console.dir(response.data);
-					//return resolve(response.data);
-				})
-				.catch(function (error) {
-					console.dir(error);
-					//return reject(error);
-				});
-			})
+	await axios({
+		method: 'post',
+		url: descriptionUrl,
+		headers: { 'Authorization': token },
+		data: updatePromotionDescriptionPayload
+	});
 
-			var updateCommControlPayload = [{
-		        "keys": {
-		            "COMMUNICATION_CELL_ID": response.data.items[0].values.communication_cell_id_control
-		        },
-		        "values": {
-		        	"SENT": false,
-		        	"BASE_CONTACT_DATE": currentDateTimeStamp,
-			    	"cell_code"					: payloadBody[0]["cell_code"],
-			    	"cell_name"					: payloadBody[0]["cell_name"],
-			        "campaign_name"				: payloadBody[0]["campaign_name"],
-			        "campaign_id"				: payloadBody[0]["campaign_id"],
-			        "campaign_code"				: payloadBody[0]["campaign_code"],
-			        "cell_type"					: "2",
-			        "channel"					: "2",
-			        "is_putput_flag"			: "0"
-		        }
-			}];
-				
-			console.dir(updateCommPayload);
+	var updateCommPayload = [{
+		"keys": {
+			"COMMUNICATION_CELL_ID": existingCpaRow.communication_cell_id
+		},
+		"values": {
+			"SENT": false,
+			"BASE_CONTACT_DATE": currentDateTimeStamp,
+			"cell_code": cleansedPayload["cell_code"],
+			"cell_name": cleansedPayload["cell_name"],
+			"campaign_name": cleansedPayload["campaign_name"],
+			"campaign_id": cleansedPayload["campaign_id"],
+			"campaign_code": cleansedPayload["campaign_code"],
+			"cell_type": "1",
+			"channel": cleansedPayload["channel"],
+			"is_putput_flag": "1"
+		}
+	}];
 
-			tokenHandler.getOauth2Token().then((tokenResponse) => {
-			   	axios({
-					method: 'post',
-					url: communicationCellUrl,
-					headers: {'Authorization': tokenResponse},
-					data: updateCommControlPayload
-				})
-				.then(function (response) {
-					console.dir(response.data);
-					//return resolve(response.data);
-				})
-				.catch(function (error) {
-					console.dir(error);
-					//return reject(error);
-				});
-			})
+	console.dir(updateCommPayload);
 
-			var updatedCampaignPromotionAssociationData = {};
+	await axios({
+		method: 'post',
+		url: communicationCellUrl,
+		headers: { 'Authorization': token },
+		data: updateCommPayload
+	});
 
-			for ( var i = 0; i < payloadBody.length; i++ ) {
-				//console.dir("Step is: " + payload[i].step + ", Key is: " + payload[i].key + ", Value is: " + payload[i].value + ", Type is: " + payload[i].type);
-	
-				if ( updatedCampaignPromotionAssociationData[payloadBody[i].key] == "email_template" ) {
-					updatedCampaignPromotionAssociationData[payloadBody[i].key] = payloadBody[i].value;
-				} else {
-					updatedCampaignPromotionAssociationData[payloadBody[i].key] = decodeURIComponent(payloadBody[i].value);
-				}
-			}
+	var updateCommControlPayload = [{
+		"keys": {
+			"COMMUNICATION_CELL_ID": existingCpaRow.communication_cell_id_control
+		},
+		"values": {
+			"SENT": false,
+			"BASE_CONTACT_DATE": currentDateTimeStamp,
+			"cell_code": cleansedPayload["cell_code"],
+			"cell_name": cleansedPayload["cell_name"],
+			"campaign_name": cleansedPayload["campaign_name"],
+			"campaign_id": cleansedPayload["campaign_id"],
+			"campaign_code": cleansedPayload["campaign_code"],
+			"cell_type": "2",
+			"channel": cleansedPayload["channel"],
+			"is_putput_flag": "0"
+		}
+	}];
 
-			updatedCampaignPromotionAssociationData["sent_to_optima"] = false;
-			updatedCampaignPromotionAssociationData["date_edited"] = currentDateTimeStamp;
+	console.dir(updateCommControlPayload);
+
+	await axios({
+		method: 'post',
+		url: communicationCellUrl,
+		headers: { 'Authorization': token },
+		data: updateCommControlPayload
+	});
+
+	var updatedCampaignPromotionAssociationData = {};
+
+	for (var i = 0; i < payloadBody.length; i++) {
+		if (payloadBody[i].key == "email_template" ||
+			payloadBody[i].key == "control_group" ||
+			payloadBody[i].key == "update_contacts" ||
+			payloadBody[i].key.includes("global_code") ||
+			payloadBody[i].key.includes("instore_code")) {
+			updatedCampaignPromotionAssociationData[payloadBody[i].key] = decodeURIComponent(payloadBody[i].value);
+		} else {
+			updatedCampaignPromotionAssociationData[payloadBody[i].key] = payloadBody[i].value;
+		}
+	}
+
+	updatedCampaignPromotionAssociationData["sent_to_optima"] = false;
+	updatedCampaignPromotionAssociationData["date_edited"] = currentDateTimeStamp;
 
 
-			var updateCpaPayload = [{
-		        "keys": {
-		            "promotion_key": response.data.items[0].keys.promotion_key
-		        },
-		        "values": updatedCampaignPromotionAssociationData
-			}];
-				
-			console.dir(updateCpaPayload);
+	var updateCpaPayload = [{
+		"keys": {
+			"promotion_key": response.data.items[0].keys.promotion_key
+		},
+		"values": updatedCampaignPromotionAssociationData
+	}];
 
-			tokenHandler.getOauth2Token().then((tokenResponse) => {
-			   	axios({
-					method: 'post',
-					url: campaignAssociationUrl,
-					headers: {'Authorization': tokenResponse},
-					data: updateCpaPayload
-				})
-				.then(function (response) {
-					console.dir(response.data);
-					//return resolve(response.data);
-				})
-				.catch(function (error) {
-					console.dir(error);
-					//return reject(error);
-				});
-			})
+	console.dir(updateCpaPayload);
 
-			return response.data;	
+	await axios({
+		method: 'post',
+		url: campaignAssociationUrl,
+		headers: { 'Authorization': token },
+		data: updateCpaPayload
+	});
 
-		})
-		.catch((error) => {
-		    console.dir("Error getting promotions");
-		    console.dir(error);
-		});
-	})
-	
+	return response.data;
 }
 
 // listening port
