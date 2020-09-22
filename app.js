@@ -16,7 +16,6 @@ var urlencodedparser 	= bodyParser.urlencoded({extended:false});
 var app 				= express();
 var local       		= false;
 const tokenHandler 		= require("./tokenHandler");
-const incrementHandler 	= require("./incrementHandler");
 
 // access Heroku variables
 if ( !local ) {
@@ -628,7 +627,6 @@ function buildPromotionDescriptionPayload(payload, incrementData, numberOfCodes)
 
 	var onlineTicker = 1;
 	var instoreTicker = 1;
-	var ticker = 1;
 	var commCellForPromo = incrementData.communication_cell_code_id_increment;
 
 	console.dir("comm cell id in desc build is:");
@@ -641,10 +639,9 @@ function buildPromotionDescriptionPayload(payload, incrementData, numberOfCodes)
 	var maxCodesNeeded = Math.max(numberOfCodes.instore_codes, numberOfCodes.online_codes);
 
 	for ( var i = 1; i <= maxCodesNeeded; i++ ) {
-		var promotionArrayKey = `promotion_${ticker}`;
-
-		if ( payload.promotionType == "online" || payload.promotionType == "online_instore" ) {
-
+		
+		if ( payload.promotionType == "online" || payload.promotionType == "online_instore" ) {			
+			var promotionArrayKey = `promotion_${onlineTicker}`;
 			if ( payload[`global_code_${onlineTicker}`] != "no-code" || payload[`unique_code_${onlineTicker}`] != "no-code" ) {
 				console.dir("ADDING ONLINE DATA");
 				promotionDescriptionData.promotions[promotionArrayKey] = {};
@@ -669,11 +666,10 @@ function buildPromotionDescriptionPayload(payload, incrementData, numberOfCodes)
 					promotionDescriptionData.promotions[promotionArrayKey]["promotion_group_id"] 	= payload[`unique_code_${onlineTicker}_promo_group_id`];
 				}
 				onlineTicker++;
-				ticker++;
 			}
 		}
 		if ( payload.promotionType == "instore" || payload.promotionType == "online_instore" || payload.promotionType == "nocode" ) {
-			var promotionArrayKey = `promotion_${ticker}`;
+			var promotionArrayKey = `promotion_${instoreTicker + 5}`;
 
 			if ( payload[`instore_code_${instoreTicker}`] != "no-code" ) {
 				console.dir("ADDING INSTORE DATA");
@@ -694,7 +690,6 @@ function buildPromotionDescriptionPayload(payload, incrementData, numberOfCodes)
 				promotionDescriptionData.promotions[promotionArrayKey]["offer_medium"] 					= payload.offer_medium_instore;
 				promotionDescriptionData.promotions[promotionArrayKey]["communication_cell_id"] 		= parseInt(commCellForPromo) + 1;
 				instoreTicker++;
-				ticker++;
 			}
 		}
 	}
@@ -935,7 +930,6 @@ async function setLive(existingKey) {
 		    console.dir(error);
 		});
 	})	
-	
 }
 
 /**
