@@ -136,7 +136,7 @@ const getIncrements = () => new Promise((resolve, reject) => {
 	})
 });
 
-const saveToDataExtension = (targetUrl, payload, key, dataType, keyName) => new Promise((resolve, reject) => {
+async function saveToDataExtension(targetUrl, payload, key, dataType, keyName) {
 
 	console.dir("Target URL:");
 	console.dir(targetUrl);
@@ -149,9 +149,11 @@ const saveToDataExtension = (targetUrl, payload, key, dataType, keyName) => new 
 	console.dir("Key name:");
 	console.dir(keyName);
 
+	let insertPayload = [];
+
 	if ( dataType == "cpa" ) {
 
-		var insertPayload = [{
+		insertPayload = [{
 	        "keys": {
 	            [keyName]: (parseInt(key) + 1)
 	        },
@@ -160,24 +162,8 @@ const saveToDataExtension = (targetUrl, payload, key, dataType, keyName) => new 
 		
 		console.dir(insertPayload);
 
-		tokenHandler.getOauth2Token().then((tokenResponse) => {
-		   	axios({
-				method: 'post',
-				url: targetUrl,
-				headers: {'Authorization': tokenResponse},
-				data: insertPayload
-			})
-			.then(function (response) {
-				console.dir(response.data);
-				return resolve(response.data);
-			})
-			.catch(function (error) {
-				console.dir(error);
-				return reject(error);
-			});
-		})	
 	} else if ( dataType == "communication_cell") {
-		var insertPayload = [{
+		insertPayload = [{
 	        "keys": {
 	            [keyName]: (parseInt(key) + 1)
 	        },
@@ -192,57 +178,36 @@ const saveToDataExtension = (targetUrl, payload, key, dataType, keyName) => new 
 	        
     	}];
     	console.dir(insertPayload);
-
-		tokenHandler.getOauth2Token().then((tokenResponse) => {
-		   	axios({
-				method: 'post',
-				url: targetUrl,
-				headers: {'Authorization': tokenResponse},
-				data: insertPayload
-			})
-			.then(function (response) {
-				console.dir(response.data);
-				return resolve(response.data);
-			})
-			.catch(function (error) {
-				console.dir(error);
-				return reject(error);
-			});
-		})
+		
 	} else if ( dataType == "promotion_description") {
 
-		var insertPayload = [];
+		const orderedPromotions = Object.keys(payload.promotions).sort();
 
-		for ( var i = 1; i <= Object.keys(payload.promotions).length; i++ ) {
+		for ( var i = 1; i <= orderedPromotions.length; i++ ) {
 			insertPayload.push({
 		        "keys": {
 		            [keyName]: (parseInt(key) + i)
 		        },
-		        "values": payload.promotions["promotion_" + i],
+		        "values": payload.promotions[orderedPromotions[i - 1]],
 
 	    	});
 		}
 		console.dir("Promo desc data: ");
 		console.dir(insertPayload);
-
-		tokenHandler.getOauth2Token().then((tokenResponse) => {
-		   	axios({
-				method: 'post',
-				url: targetUrl,
-				headers: {'Authorization': tokenResponse},
-				data: insertPayload
-			})
-			.then(function (response) {
-				console.dir(response.data);
-				return resolve(response.data);
-			})
-			.catch(function (error) {
-				console.dir(error);
-				return reject(error);
-			});
-		})
 	}
-});
+
+	const token = await tokenHandler.getOauth2Token();
+
+	const response = await axios({
+		method: 'post',
+		url: targetUrl,
+		headers: {'Authorization': token},
+		data: insertPayload
+	});
+
+	console.dir(response.data);
+	return response.data;
+};
 
 const updateIncrements = (targetUrl, promotionObject, communicationCellObject, mcUniquePromotionObject, numberOfCodes) => new Promise((resolve, reject) => {
 
